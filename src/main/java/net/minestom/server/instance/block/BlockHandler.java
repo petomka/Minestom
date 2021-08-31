@@ -88,9 +88,11 @@ public interface BlockHandler {
      */
     @ApiStatus.NonExtendable
     class Placement {
-        private final Block block;
+        private Block block;
         private final Instance instance;
         private final Point blockPosition;
+
+        private boolean cancelled;
 
         @ApiStatus.Internal
         public Placement(Block block, Instance instance, Point blockPosition) {
@@ -103,12 +105,24 @@ public interface BlockHandler {
             return block;
         }
 
+        public void setBlock(@NotNull Block block) {
+            this.block = block;
+        }
+
         public @NotNull Instance getInstance() {
             return instance;
         }
 
         public @NotNull Point getBlockPosition() {
             return blockPosition;
+        }
+
+        public boolean isCancelled() {
+            return cancelled;
+        }
+
+        public void setCancelled(boolean cancel) {
+            this.cancelled = cancel;
         }
     }
 

@@ -5,12 +5,16 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Vec;
+import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.EventDispatcher;
 import net.minestom.server.event.GlobalHandles;
+import net.minestom.server.event.generic.BlockPlaceEvent;
 import net.minestom.server.event.instance.InstanceChunkLoadEvent;
 import net.minestom.server.event.instance.InstanceChunkUnloadEvent;
 import net.minestom.server.event.player.PlayerBlockBreakEvent;
+import net.minestom.server.event.player.PlayerBlockPlaceEvent;
+import net.minestom.server.event.server.ServerBlockPlaceEvent;
 import net.minestom.server.instance.batch.ChunkGenerationBatch;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockHandler;
@@ -157,6 +161,20 @@ public class InstanceContainer extends Instance {
         final Point blockPosition = placement.getBlockPosition();
         final Chunk chunk = getChunkAt(blockPosition);
         if (!ChunkUtils.isLoaded(chunk)) return false;
+
+        BlockPlaceEvent event;
+        if (placement instanceof BlockHandler.PlayerPlacement) {
+            BlockHandler.PlayerPlacement playerPlacement = (BlockHandler.PlayerPlacement) placement;
+            Player player = playerPlacement.getPlayer();
+            PlayerBlockPlaceEvent playerBlockPlaceEvent = new PlayerBlockPlaceEvent(playerPlacement);
+            playerBlockPlaceEvent.consumeBlock(player.getGameMode() != GameMode.CREATIVE);
+            event = playerBlockPlaceEvent;
+        } else {
+            event = new ServerBlockPlaceEvent(placement);
+        }
+        EventDispatcher.call(event);
+        if (event.isCancelled()) return false;
+
         UNSAFE_setBlock(chunk, blockPosition.blockX(), blockPosition.blockY(), blockPosition.blockZ(),
                 placement.getBlock(), placement, null);
         return true;

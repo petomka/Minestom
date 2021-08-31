@@ -9,7 +9,6 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.entity.metadata.other.ArmorStandMeta;
 import net.minestom.server.event.EventDispatcher;
 import net.minestom.server.event.player.PlayerBlockInteractEvent;
-import net.minestom.server.event.player.PlayerBlockPlaceEvent;
 import net.minestom.server.event.player.PlayerUseItemOnBlockEvent;
 import net.minestom.server.instance.Chunk;
 import net.minestom.server.instance.Instance;
@@ -17,7 +16,6 @@ import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.BlockHandler;
 import net.minestom.server.instance.block.BlockManager;
-import net.minestom.server.instance.block.rule.BlockPlacementRule;
 import net.minestom.server.inventory.PlayerInventory;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
@@ -136,35 +134,15 @@ public class BlockPlacementListener {
             refresh(player, chunk);
             return;
         }
-        // BlockPlaceEvent check
-        PlayerBlockPlaceEvent playerBlockPlaceEvent = new PlayerBlockPlaceEvent(player, placedBlock, blockFace, placementPosition, packet.hand);
-        playerBlockPlaceEvent.consumeBlock(player.getGameMode() != GameMode.CREATIVE);
-        EventDispatcher.call(playerBlockPlaceEvent);
-        if (playerBlockPlaceEvent.isCancelled()) {
-            refresh(player, chunk);
-            return;
-        }
-
-        // BlockPlacementRule check
-        Block resultBlock = playerBlockPlaceEvent.getBlock();
-        final BlockPlacementRule blockPlacementRule = BLOCK_MANAGER.getBlockPlacementRule(resultBlock);
-        if (blockPlacementRule != null) {
-            // Get id from block placement rule instead of the event
-            resultBlock = blockPlacementRule.blockPlace(instance, resultBlock, blockFace, blockPosition, player);
-        }
-        if (resultBlock == null) {
-            refresh(player, chunk);
-            return;
-        }
         // Place the block
-        instance.placeBlock(new BlockHandler.PlayerPlacement(resultBlock, instance, placementPosition, player, hand, blockFace,
+        instance.placeBlock(new BlockHandler.PlayerPlacement(placedBlock, instance, placementPosition, player, hand, blockFace,
                 packet.cursorPositionX, packet.cursorPositionY, packet.cursorPositionZ));
         // Block consuming
-        if (playerBlockPlaceEvent.doesConsumeBlock()) {
-            // Consume the block in the player's hand
-            final ItemStack newUsedItem = usedItem.getStackingRule().apply(usedItem, usedItem.getAmount() - 1);
-            playerInventory.setItemInHand(hand, newUsedItem);
-        }
+        //if (playerBlockPlaceEvent.doesConsumeBlock()) {
+        //    // Consume the block in the player's hand
+        //    final ItemStack newUsedItem = usedItem.getStackingRule().apply(usedItem, usedItem.getAmount() - 1);
+        //    playerInventory.setItemInHand(hand, newUsedItem);
+        //}
     }
 
     private static void refresh(Player player, Chunk chunk) {
