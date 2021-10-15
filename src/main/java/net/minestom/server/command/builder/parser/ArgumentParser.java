@@ -2,7 +2,10 @@ package net.minestom.server.command.builder.parser;
 
 import net.minestom.server.command.builder.arguments.*;
 import net.minestom.server.command.builder.arguments.minecraft.*;
-import net.minestom.server.command.builder.arguments.minecraft.registry.*;
+import net.minestom.server.command.builder.arguments.minecraft.registry.ArgumentEnchantment;
+import net.minestom.server.command.builder.arguments.minecraft.registry.ArgumentEntityType;
+import net.minestom.server.command.builder.arguments.minecraft.registry.ArgumentParticle;
+import net.minestom.server.command.builder.arguments.minecraft.registry.ArgumentPotionEffect;
 import net.minestom.server.command.builder.arguments.number.ArgumentDouble;
 import net.minestom.server.command.builder.arguments.number.ArgumentFloat;
 import net.minestom.server.command.builder.arguments.number.ArgumentInteger;
@@ -41,10 +44,10 @@ public class ArgumentParser {
         ARGUMENT_FUNCTION_MAP.put("time", ArgumentTime::new);
         ARGUMENT_FUNCTION_MAP.put("enchantment", ArgumentEnchantment::new);
         ARGUMENT_FUNCTION_MAP.put("particle", ArgumentParticle::new);
-        ARGUMENT_FUNCTION_MAP.put("resourceLocation", ArgumentResourceLocation::new);
+        ARGUMENT_FUNCTION_MAP.put("resourcelocation", ArgumentResourceLocation::new);
         ARGUMENT_FUNCTION_MAP.put("potion", ArgumentPotionEffect::new);
-        ARGUMENT_FUNCTION_MAP.put("entityType", ArgumentEntityType::new);
-        ARGUMENT_FUNCTION_MAP.put("blockState", ArgumentBlockState::new);
+        ARGUMENT_FUNCTION_MAP.put("entitytype", ArgumentEntityType::new);
+        ARGUMENT_FUNCTION_MAP.put("blockstate", ArgumentBlockState::new);
         ARGUMENT_FUNCTION_MAP.put("intrange", ArgumentIntRange::new);
         ARGUMENT_FUNCTION_MAP.put("floatrange", ArgumentFloatRange::new);
 
@@ -66,7 +69,6 @@ public class ArgumentParser {
     @ApiStatus.Experimental
     public static @NotNull Argument<?>[] generate(@NotNull String format) {
         List<Argument<?>> result = new ArrayList<>();
-
         // 0 = no state
         // 1 = inside angle bracket <>
         int state = 0;
@@ -75,11 +77,9 @@ public class ArgumentParser {
         Function<String, Argument<?>> argumentFunction = null;
 
         StringBuilder builder = new StringBuilder();
-
         // test: Integer<name> String<hey>
         for (int i = 0; i < format.length(); i++) {
-            char c = format.charAt(i);
-
+            final char c = format.charAt(i);
             // No state
             if (state == 0) {
                 if (c == ' ') {
@@ -133,17 +133,15 @@ public class ArgumentParser {
                 result.add(new ArgumentLiteral(argument));
             }
         }
-
         return result.toArray(Argument[]::new);
     }
 
-    @Nullable
-    public static ArgumentResult validate(@NotNull Argument<?> argument,
-                                          @NotNull Argument<?>[] arguments, int argIndex,
-                                          @NotNull String[] inputArguments, int inputIndex) {
-        final boolean end = inputIndex == inputArguments.length;
-        if (end) // Stop if there is no input to analyze left
-            return null;
+    public static @Nullable ArgumentResult validate(@NotNull Argument<?> argument,
+                                                    @NotNull Argument<?>[] arguments, int argIndex,
+                                                    @NotNull String input, int inputIndex) {
+        final String[] inputArguments = input.split(StringUtils.SPACE);
+        // Stop if there is no input to analyze left
+        if (inputIndex == inputArguments.length) return null;
 
         // the parsed argument value, null if incorrect
         Object parsedValue = null;
@@ -162,13 +160,10 @@ public class ArgumentParser {
                 // Argument is supposed to take the rest of the command input
                 for (int i = inputIndex; i < inputArguments.length; i++) {
                     final String arg = inputArguments[i];
-                    if (builder.length() > 0)
-                        builder.append(StringUtils.SPACE);
+                    if (builder.length() > 0) builder.append(StringUtils.SPACE);
                     builder.append(arg);
                 }
-
                 rawArg = builder.toString();
-
                 try {
                     parsedValue = argument.parse(rawArg);
                     correct = true;
@@ -181,29 +176,22 @@ public class ArgumentParser {
             StringBuilder builder = new StringBuilder();
             for (int i = inputIndex; i < inputArguments.length; i++) {
                 builder.append(inputArguments[i]);
-
                 rawArg = builder.toString();
-
                 try {
                     parsedValue = argument.parse(rawArg);
-
                     // Prevent quitting the parsing too soon if the argument
                     // does not allow space
                     final boolean lastArgumentIteration = argIndex + 1 == arguments.length;
                     if (lastArgumentIteration && i + 1 < inputArguments.length) {
-                        if (!argument.allowSpace())
-                            break;
+                        if (!argument.allowSpace()) break;
                         builder.append(StringUtils.SPACE);
                         continue;
                     }
-
                     correct = true;
-
                     inputIndex = i + 1;
                     break;
                 } catch (ArgumentSyntaxException exception) {
                     argumentSyntaxException = exception;
-
                     if (!argument.allowSpace()) {
                         // rawArg should be the remaining
                         for (int j = i + 1; j < inputArguments.length; j++) {
@@ -247,5 +235,4 @@ public class ArgumentParser {
         // If correct
         public Object parsedValue;
     }
-
 }

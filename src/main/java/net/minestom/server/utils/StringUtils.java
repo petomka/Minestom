@@ -21,6 +21,12 @@ public class StringUtils {
         return count;
     }
 
+    public static String trimLeft(String input) {
+        int i = 0;
+        while (i < input.length() && Character.isWhitespace(input.charAt(i))) i++;
+        return input.substring(i);
+    }
+
     /**
      * Applies the Jaro-Winkler distance algorithm to the given strings, providing information about the
      * similarity of them.

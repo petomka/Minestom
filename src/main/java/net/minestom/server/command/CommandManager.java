@@ -214,7 +214,7 @@ public final class CommandManager {
             }
 
             final ArgumentQueryResult queryResult = CommandParser.findEligibleArgument(commandQueryResult.command,
-                    commandQueryResult.args, input, false, true, syntax -> true, argument -> true);
+                    commandQueryResult.content(), input, false, true, syntax -> true, argument -> true);
             if (queryResult == null) {
                 // Invalid argument, return command node (default to root)
                 final int commandNode = commandIdentityMap.getOrDefault(commandQueryResult.command, 0);

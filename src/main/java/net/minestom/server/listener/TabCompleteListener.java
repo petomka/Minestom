@@ -27,13 +27,8 @@ public class TabCompleteListener {
         String args = commandString.replaceFirst(Pattern.quote(commandName), "");
 
         final CommandQueryResult commandQueryResult = CommandParser.findCommand(commandString);
-        if (commandQueryResult == null) {
-            // Command not found
-            return;
-        }
-
-        final ArgumentQueryResult queryResult = CommandParser.findEligibleArgument(commandQueryResult.command,
-                commandQueryResult.args, commandString, text.endsWith(StringUtils.SPACE), false,
+        if (commandQueryResult == null) return;
+        final ArgumentQueryResult queryResult = CommandParser.findEligibleArgument(commandQueryResult, text.endsWith(StringUtils.SPACE), false,
                 CommandSyntax::hasSuggestion, Argument::hasSuggestion);
         if (queryResult == null) {
             // Suggestible argument not found

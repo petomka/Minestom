@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class CommandData {
-
     private final Map<String, Object> dataMap = new ConcurrentHashMap<>();
 
     public CommandData set(@NotNull String key, Object value) {
@@ -15,8 +14,7 @@ public class CommandData {
         return this;
     }
 
-    @Nullable
-    public <T> T get(@NotNull String key) {
+    public <T> @Nullable T get(@NotNull String key) {
         return (T) dataMap.get(key);
     }
 
@@ -24,8 +22,7 @@ public class CommandData {
         return dataMap.containsKey(key);
     }
 
-    @NotNull
-    public Map<String, Object> getDataMap() {
+    public @NotNull Map<String, Object> getDataMap() {
         return dataMap;
     }
 }
