@@ -108,47 +108,45 @@ public class InstanceContainer extends Instance {
     private synchronized void UNSAFE_setBlock(@NotNull Chunk chunk, int x, int y, int z, @NotNull Block block,
                                               @Nullable BlockHandler.Placement placement, @Nullable BlockHandler.Destroy destroy) {
         if (chunk.isReadOnly()) return;
-        synchronized (chunk) {
-            // Refresh the last block change time
-            this.lastBlockChangeTime = System.currentTimeMillis();
-            final Vec blockPosition = new Vec(x, y, z);
-            if (isAlreadyChanged(blockPosition, block)) { // do NOT change the block again.
-                // Avoids StackOverflowExceptions when onDestroy tries to destroy the block itself
-                // This can happen with nether portals which break the entire frame when a portal block is broken
-                return;
-            }
-            this.currentlyChangingBlocks.put(blockPosition, block);
+        // Refresh the last block change time
+        this.lastBlockChangeTime = System.currentTimeMillis();
+        final Vec blockPosition = new Vec(x, y, z);
+        if (isAlreadyChanged(blockPosition, block)) { // do NOT change the block again.
+            // Avoids StackOverflowExceptions when onDestroy tries to destroy the block itself
+            // This can happen with nether portals which break the entire frame when a portal block is broken
+            return;
+        }
+        this.currentlyChangingBlocks.put(blockPosition, block);
 
-            final Block previousBlock = chunk.getBlock(blockPosition);
-            final BlockHandler previousHandler = previousBlock.handler();
+        final Block previousBlock = chunk.getBlock(blockPosition);
+        final BlockHandler previousHandler = previousBlock.handler();
 
-            // Change id based on neighbors
-            final BlockPlacementRule blockPlacementRule = BLOCK_MANAGER.getBlockPlacementRule(block);
-            if (blockPlacementRule != null) {
-                block = blockPlacementRule.blockUpdate(this, blockPosition, block);
-            }
+        // Change id based on neighbors
+        final BlockPlacementRule blockPlacementRule = BLOCK_MANAGER.getBlockPlacementRule(block);
+        if (blockPlacementRule != null) {
+            block = blockPlacementRule.blockUpdate(this, blockPosition, block);
+        }
 
-            // Set the block
-            chunk.setBlock(x, y, z, block);
+        // Set the block
+        chunk.setBlock(x, y, z, block);
 
-            // Refresh neighbors since a new block has been placed
-            executeNeighboursBlockPlacementRule(blockPosition);
+        // Refresh neighbors since a new block has been placed
+        executeNeighboursBlockPlacementRule(blockPosition);
 
-            // Refresh player chunk block
-            chunk.sendPacketToViewers(new BlockChangePacket(blockPosition, block.stateId()));
+        // Refresh player chunk block
+        chunk.sendPacketToViewers(new BlockChangePacket(blockPosition, block.stateId()));
 
-            if (previousHandler != null) {
-                // Previous destroy
-                previousHandler.onDestroy(Objects.requireNonNullElseGet(destroy,
-                        () -> new BlockHandler.Destroy(previousBlock, this, blockPosition)));
-            }
-            final BlockHandler handler = block.handler();
-            if (handler != null) {
-                // New placement
-                final Block finalBlock = block;
-                handler.onPlace(Objects.requireNonNullElseGet(placement,
-                        () -> new BlockHandler.Placement(finalBlock, this, blockPosition)));
-            }
+        if (previousHandler != null) {
+            // Previous destroy
+            previousHandler.onDestroy(Objects.requireNonNullElseGet(destroy,
+                    () -> new BlockHandler.Destroy(previousBlock, this, blockPosition)));
+        }
+        final BlockHandler handler = block.handler();
+        if (handler != null) {
+            // New placement
+            final Block finalBlock = block;
+            handler.onPlace(Objects.requireNonNullElseGet(placement,
+                    () -> new BlockHandler.Placement(finalBlock, this, blockPosition)));
         }
     }
 

@@ -27,23 +27,21 @@ public class ChunkGenerationBatch extends ChunkBatch {
     public @NotNull CompletableFuture<@NotNull Chunk> generate(@NotNull ChunkGenerator chunkGenerator) {
         final CompletableFuture<Chunk> completableFuture = new CompletableFuture<>();
         BLOCK_BATCH_POOL.execute(() -> {
-            synchronized (chunk) {
-                final List<ChunkPopulator> populators = chunkGenerator.getPopulators();
-                final boolean hasPopulator = populators != null && !populators.isEmpty();
+            final List<ChunkPopulator> populators = chunkGenerator.getPopulators();
+            final boolean hasPopulator = populators != null && !populators.isEmpty();
 
-                chunkGenerator.generateChunkData(this, chunk.getChunkX(), chunk.getChunkZ());
+            chunkGenerator.generateChunkData(this, chunk.getChunkX(), chunk.getChunkZ());
 
-                if (hasPopulator) {
-                    for (ChunkPopulator chunkPopulator : populators) {
-                        chunkPopulator.populateChunk(this, chunk);
-                    }
+            if (hasPopulator) {
+                for (ChunkPopulator chunkPopulator : populators) {
+                    chunkPopulator.populateChunk(this, chunk);
                 }
-
-                // Update the chunk.
-                this.chunk.sendChunk();
-                this.instance.refreshLastBlockChangeTime();
-                completableFuture.complete(chunk);
             }
+
+            // Update the chunk.
+            this.chunk.sendChunk();
+            this.instance.refreshLastBlockChangeTime();
+            completableFuture.complete(chunk);
         });
         return completableFuture;
     }

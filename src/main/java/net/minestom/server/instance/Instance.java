@@ -508,9 +508,7 @@ public abstract class Instance implements Block.Getter, Block.Setter, Tickable, 
     public @Nullable Block getBlock(int x, int y, int z, @NotNull Condition condition) {
         final Chunk chunk = getChunkAt(x, z);
         Check.notNull(chunk, "The chunk at {0}:{1} is not loaded", x, z);
-        synchronized (chunk) {
-            return chunk.getBlock(x, y, z, condition);
-        }
+        return chunk.getBlock(x, y, z, condition);
     }
 
     /**
