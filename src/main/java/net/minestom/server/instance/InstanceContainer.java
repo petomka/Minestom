@@ -319,7 +319,7 @@ public class InstanceContainer extends Instance {
                 }
             };
             GenerationUnit.Chunk chunkUnit = GeneratorImpl.createChunk(getSectionMinY(), getSectionMaxY(),
-                    List.of(chunk));
+                    List.of(new GeneratorImpl.ChunkEntry(chunk)));
             generator.generate(request, chunkUnit);
 
             CompletableFuture<Chunk> resultFuture = new CompletableFuture<>();
