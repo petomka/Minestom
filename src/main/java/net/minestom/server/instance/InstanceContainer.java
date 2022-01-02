@@ -279,7 +279,7 @@ public class InstanceContainer extends Instance {
                     }
                 })
                 // cache the retrieved chunk
-                .whenComplete((chunk, throwable) -> {
+                .thenAccept((chunk) -> {
                     // TODO run in the instance thread?
                     cacheChunk(chunk);
                     EventDispatcher.call(new InstanceChunkLoadEvent(this, chunk));
