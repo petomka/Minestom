@@ -2,6 +2,7 @@ package net.minestom.server.instance;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
@@ -277,6 +278,10 @@ public class InstanceContainer extends Instance {
                         this.loadingChunks.remove(ChunkUtils.getChunkIndex(chunk));
                     }
                     completableFuture.complete(chunk);
+                })
+                .exceptionally(throwable -> {
+                    MinecraftServer.getExceptionManager().handleException(throwable);
+                    return null;
                 });
         if (loader.supportsParallelLoading()) {
             CompletableFuture.runAsync(retriever);
