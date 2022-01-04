@@ -7,6 +7,7 @@ import net.minestom.server.utils.binary.BinaryWriter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.function.IntUnaryOperator;
 
 final class PaletteImpl implements Palette, Cloneable {
     private static final int[] MAGIC_MASKS;
@@ -24,6 +25,7 @@ final class PaletteImpl implements Palette, Cloneable {
 
     // Specific to this palette type
     private final int dimension;
+    private final int dimensionBitCount;
     private final int size;
     private final int maxBitsPerEntry;
     private final int bitsIncrement;
@@ -42,8 +44,7 @@ final class PaletteImpl implements Palette, Cloneable {
     private Int2IntOpenHashMap valueToPaletteMap;
 
     PaletteImpl(int dimension, int maxBitsPerEntry, int bitsPerEntry, int bitsIncrement) {
-        if (dimension < 1 || dimension % 2 != 0)
-            throw new IllegalArgumentException("Dimension must be positive and power of 2");
+        this.dimensionBitCount = validateDimension(dimension);
 
         this.dimension = dimension;
         this.size = dimension * dimension * dimension;
@@ -79,6 +80,18 @@ final class PaletteImpl implements Palette, Cloneable {
         final short value = (short) (values[index] >> bitIndex & MAGIC_MASKS[bitsPerEntry]);
         // Change to palette value and return
         return hasPalette ? paletteToValueList.getInt(value) : value;
+    }
+
+    @Override
+    public void getAll(@NotNull EntryConsumer consumer) {
+        // TODO optimize
+        for (int x = 0; x < dimension; x++) {
+            for (int y = 0; y < dimension; y++) {
+                for (int z = 0; z < dimension; z++) {
+                    consumer.accept(x, y, z, get(x, y, z));
+                }
+            }
+        }
     }
 
     @Override
@@ -142,12 +155,47 @@ final class PaletteImpl implements Palette, Cloneable {
             this.values = values = new long[(size + valuesPerLong - 1) / valuesPerLong];
         }
 
-        long block = 0;
-        for (int i = 0; i < valuesPerLong; i++) {
-            block |= (long) value << i * bitsPerEntry;
+        if (placedAir) {
+            Arrays.fill(values, 0);
+            this.count = 0;
+        } else {
+            long block = 0;
+            for (int i = 0; i < valuesPerLong; i++) {
+                block |= (long) value << i * bitsPerEntry;
+            }
+            Arrays.fill(values, block);
+            this.count = maxSize();
         }
-        Arrays.fill(values, block);
-        this.count = maxSize();
+    }
+
+    @Override
+    public void setAll(@NotNull EntrySupplier supplier) {
+        // TODO optimize
+        for (int x = 0; x < dimension; x++) {
+            for (int y = 0; y < dimension; y++) {
+                for (int z = 0; z < dimension; z++) {
+                    set(x, y, z, supplier.get(x, y, z));
+                }
+            }
+        }
+    }
+
+    @Override
+    public void replace(int x, int y, int z, @NotNull IntUnaryOperator operator) {
+        // TODO optimize
+        set(x, y, z, operator.applyAsInt(get(x, y, z)));
+    }
+
+    @Override
+    public void replaceAll(@NotNull EntryFunction function) {
+        // TODO optimize
+        for (int x = 0; x < dimension; x++) {
+            for (int y = 0; y < dimension; y++) {
+                for (int z = 0; z < dimension; z++) {
+                    set(x, y, z, function.apply(x, y, z, get(x, y, z)));
+                }
+            }
+        }
     }
 
     @Override
@@ -214,8 +262,8 @@ final class PaletteImpl implements Palette, Cloneable {
     private void resize(int newBitsPerEntry) {
         newBitsPerEntry = fixBitsPerEntry(newBitsPerEntry);
         PaletteImpl palette = new PaletteImpl(dimension, maxBitsPerEntry, newBitsPerEntry, bitsIncrement);
-        for (int y = 0; y < dimension; y++) {
-            for (int x = 0; x < dimension; x++) {
+        for (int x = 0; x < dimension; x++) {
+            for (int y = 0; y < dimension; y++) {
                 for (int z = 0; z < dimension; z++) {
                     palette.set(x, y, z, get(x, y, z));
                 }
@@ -250,10 +298,21 @@ final class PaletteImpl implements Palette, Cloneable {
     }
 
     int getSectionIndex(int x, int y, int z) {
-        return y << (dimension / 2) | z << (dimension / 4) | x;
+        return y << (dimensionBitCount << 1) | z << dimensionBitCount | x;
     }
 
     static int maxPaletteSize(int bitsPerEntry) {
         return 1 << bitsPerEntry;
+    }
+
+    private static int validateDimension(int dimension) {
+        if (dimension <= 1) {
+            throw new IllegalArgumentException("Dimension must be greater 1");
+        }
+        double log2 = Math.log(dimension) / Math.log(2);
+        if ((int) Math.ceil(log2) != (int) Math.floor(log2)) {
+            throw new IllegalArgumentException("Dimension must be a power of 2");
+        }
+        return (int) log2;
     }
 }

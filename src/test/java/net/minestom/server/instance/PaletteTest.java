@@ -3,8 +3,8 @@ package net.minestom.server.instance;
 import net.minestom.server.instance.palette.Palette;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -89,10 +89,20 @@ public class PaletteTest {
             palette.fill(6);
             assertEquals(6, palette.get(0, 0, 0));
             assertEquals(palette.maxSize(), palette.size());
-            for (int y = 0; y < palette.dimension(); y++) {
-                for (int x = 0; x < palette.dimension(); x++) {
+            for (int x = 0; x < palette.dimension(); x++) {
+                for (int y = 0; y < palette.dimension(); y++) {
                     for (int z = 0; z < palette.dimension(); z++) {
                         assertEquals(6, palette.get(x, y, z));
+                    }
+                }
+            }
+
+            palette.fill(0);
+            assertEquals(0, palette.size());
+            for (int x = 0; x < palette.dimension(); x++) {
+                for (int y = 0; y < palette.dimension(); y++) {
+                    for (int z = 0; z < palette.dimension(); z++) {
+                        assertEquals(0, palette.get(x, y, z));
                     }
                 }
             }
@@ -100,19 +110,92 @@ public class PaletteTest {
     }
 
     @Test
+    public void bulk() {
+        var palettes = testPalettes();
+        for (Palette palette : palettes) {
+            final int dimension = palette.dimension();
+            // Place
+            for (int x = 0; x < dimension; x++) {
+                for (int y = 0; y < dimension; y++) {
+                    for (int z = 0; z < dimension; z++) {
+                        palette.set(x, y, z, x + y + z + 1);
+                    }
+                }
+            }
+            assertEquals(palette.maxSize(), palette.size());
+            // Verify
+            for (int x = 0; x < dimension; x++) {
+                for (int y = 0; y < dimension; y++) {
+                    for (int z = 0; z < dimension; z++) {
+                        assertEquals(x + y + z + 1, palette.get(x, y, z));
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void bulkAll() {
+        var palettes = testPalettes();
+        for (Palette palette : palettes) {
+            AtomicInteger count = new AtomicInteger();
+
+            // Ensure that the lambda is called for every entry
+            // even if the array is initialized
+            palette.getAll((x, y, z, value) -> count.incrementAndGet());
+            assertEquals(count.get(), palette.maxSize());
+
+            // Fill all entries
+            count.set(0);
+            palette.setAll((x, y, z) -> count.incrementAndGet());
+            assertEquals(palette.maxSize(), palette.size());
+            assertEquals(count.get(), palette.size());
+
+            count.set(0);
+            palette.getAll((x, y, z, value) -> assertEquals(count.incrementAndGet(), value));
+            assertEquals(count.get(), palette.size());
+
+            // Replacing
+            count.set(0);
+            palette.replaceAll((x, y, z, value) -> {
+                assertEquals(count.incrementAndGet(), value);
+                return count.get();
+            });
+            assertEquals(count.get(), palette.size());
+
+            count.set(0);
+            palette.getAll((x, y, z, value) -> assertEquals(count.incrementAndGet(), value));
+        }
+    }
+
+    @Test
+    public void replace() {
+        var palette = Palette.blocks();
+        palette.set(0, 0, 0, 1);
+        palette.replace(0, 0, 0, operand -> {
+            assertEquals(1, operand);
+            return 2;
+        });
+        assertEquals(2, palette.get(0, 0, 0));
+    }
+
+    @Test
     public void dimension() {
+        assertThrows(Exception.class, () -> Palette.newPalette(-4, 5, 3, 1));
         assertThrows(Exception.class, () -> Palette.newPalette(0, 5, 3, 1));
         assertThrows(Exception.class, () -> Palette.newPalette(1, 5, 3, 1));
         assertDoesNotThrow(() -> Palette.newPalette(2, 5, 3, 1));
         assertThrows(Exception.class, () -> Palette.newPalette(3, 5, 3, 1));
         assertDoesNotThrow(() -> Palette.newPalette(4, 5, 3, 1));
+        assertThrows(Exception.class, () -> Palette.newPalette(6, 5, 3, 1));
+        assertDoesNotThrow(() -> Palette.newPalette(16, 5, 3, 1));
     }
 
     private static List<Palette> testPalettes() {
-        List<Palette> palettes = new ArrayList<>();
-        for (int i = 4; i < 16; i += 2) {
-            palettes.add(Palette.newPalette(i, 5, 3, 1));
-        }
-        return palettes;
+        return List.of(
+                Palette.newPalette(2, 5, 3, 1),
+                Palette.newPalette(4, 5, 3, 1),
+                Palette.newPalette(8, 5, 3, 1),
+                Palette.newPalette(16, 5, 3, 1));
     }
 }
