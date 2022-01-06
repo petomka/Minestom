@@ -488,7 +488,7 @@ public class InstanceContainer extends Instance {
     @Override
     @Deprecated
     public void setChunkGenerator(ChunkGenerator chunkGenerator) {
-        setGenerator(Generator.specialize(new ChunkGeneratorCompatibilityLayer(chunkGenerator)));
+        setGenerator(Generator.specialize(GenerationUnit.Chunk.class, new ChunkGeneratorCompatibilityLayer(chunkGenerator)));
     }
 
     @Override
