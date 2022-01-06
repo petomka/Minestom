@@ -2,10 +2,8 @@ package net.minestom.jmh.palette;
 
 import net.minestom.server.instance.palette.Palette;
 import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
@@ -13,34 +11,35 @@ import java.util.concurrent.atomic.AtomicInteger;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
-public class PaletteGetBenchmark {
+public class PaletteReplaceBenchmark {
 
-    @Param({"4", "16"})
-    public int dimension;
+    //@Param({"4", "16"})
+    //public int dimension;
 
     private Palette palette;
 
     @Setup
     public void setup() {
-        palette = Palette.newPalette(dimension, 15, 4, 1);
-        AtomicInteger value = new AtomicInteger();
-        palette.setAll((x, y, z) -> value.getAndIncrement());
+        // FIXME: StackOverflowError
+        // palette = Palette.newPalette(dimension, 15, 4, 1);
+        palette = Palette.blocks();
+        palette.setAll((x, y, z) -> x + y + z + 1);
     }
 
     @Benchmark
-    public void read(Blackhole blackHole) {
+    public void replaceAll() {
+        palette.replaceAll((x, y, z, value) -> value + 1);
+    }
+
+    @Benchmark
+    public void replaceLoop() {
         final int dimension = palette.dimension();
         for (int x = 0; x < dimension; x++) {
             for (int y = 0; y < dimension; y++) {
                 for (int z = 0; z < dimension; z++) {
-                    blackHole.consume(palette.get(x, y, z));
+                    palette.replace(x, y, z, value -> value + 1);
                 }
             }
         }
-    }
-
-    @Benchmark
-    public void readAll(Blackhole blackHole) {
-        palette.getAll((x, y, z, value) -> blackHole.consume(value));
     }
 }
