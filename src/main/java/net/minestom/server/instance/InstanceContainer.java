@@ -353,8 +353,8 @@ public class InstanceContainer extends Instance {
 
     @Override
     public boolean isInVoid(@NotNull Point point) {
-        // TODO: customizable
-        return point.y() < -64;
+        // TODO: more customizable
+        return point.y() < getDimensionType().getMinY() - 64;
     }
 
     /**

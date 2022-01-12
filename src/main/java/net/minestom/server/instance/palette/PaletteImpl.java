@@ -141,62 +141,53 @@ final class PaletteImpl implements Palette, Cloneable {
 
     @Override
     public void fill(int value) {
-        final boolean placedAir = value == 0;
-        if (!placedAir) value = getPaletteIndex(value);
+        if (value == 0) {
+            this.values = new long[0];
+            this.count = 0;
+            return;
+        }
+        value = getPaletteIndex(value);
         final int bitsPerEntry = this.bitsPerEntry;
         final int valuesPerLong = VALUES_PER_LONG[bitsPerEntry];
         long[] values = this.values;
         if (values.length == 0) {
-            if (placedAir) {
-                // Section is empty and method is trying to place an air block, stop unnecessary computation
-                return;
-            }
-            // Initialize the section
             this.values = values = new long[(size + valuesPerLong - 1) / valuesPerLong];
         }
-
-        if (placedAir) {
-            Arrays.fill(values, 0);
-            this.count = 0;
-        } else {
-            long block = 0;
-            for (int i = 0; i < valuesPerLong; i++) {
-                block |= (long) value << i * bitsPerEntry;
-            }
-            Arrays.fill(values, block);
-            this.count = maxSize();
-        }
+        long block = 0;
+        for (int i = 0; i < valuesPerLong; i++)
+            block |= (long) value << i * bitsPerEntry;
+        Arrays.fill(values, block);
+        this.count = maxSize();
     }
 
     @Override
     public void setAll(@NotNull EntrySupplier supplier) {
         int[] cache = sizeCache(maxSize());
-        // Constants
-        final int size = this.size;
-        final int dimensionMinus = dimension - 1;
-        final int dimensionBitCount = this.dimensionBitCount;
-        final int shiftedDimensionBitCount = dimensionBitCount << 1;
+        final int dimension = this.dimension;
         // Fill cache with values
         int fillValue = -1;
         int count = 0;
-        for (int i = 0; i < size; i++) {
-            final int y = i >> shiftedDimensionBitCount;
-            final int z = (i >> (dimensionBitCount)) & dimensionMinus;
-            final int x = i & dimensionMinus;
-            int value = supplier.get(x, y, z);
-            if (fillValue != -2) {
-                if (fillValue == -1) {
-                    fillValue = value;
-                } else if (fillValue != value) {
-                    fillValue = -2;
+        int index = 0;
+        for (int y = 0; y < dimension; y++) {
+            for (int z = 0; z < dimension; z++) {
+                for (int x = 0; x < dimension; x++) {
+                    int value = supplier.get(x, y, z);
+                    // Support for fill fast exit if the supplier returns a constant value
+                    if (fillValue != -2) {
+                        if (fillValue == -1) {
+                            fillValue = value;
+                        } else if (fillValue != value) {
+                            fillValue = -2;
+                        }
+                    }
+                    // Set value in cache
+                    if (value != 0) {
+                        value = getPaletteIndex(value);
+                        count++;
+                    }
+                    cache[index++] = value;
                 }
             }
-
-            if (value != 0) {
-                value = getPaletteIndex(value);
-                count++;
-            }
-            cache[i] = value;
         }
         // Update palette content
         if (fillValue < 0) {

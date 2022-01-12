@@ -1,5 +1,7 @@
 package net.minestom.demo;
 
+import net.minestom.demo.generator.ChunkGeneratorDemo;
+import net.minestom.demo.generator.NoiseTestGenerator;
 import net.kyori.adventure.text.Component;
 import net.minestom.demo.generator.ChunkGeneratorDemo;
 import net.minestom.demo.generator.NoiseTestGenerator;
