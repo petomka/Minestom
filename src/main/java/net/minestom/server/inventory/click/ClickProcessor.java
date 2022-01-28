@@ -1,6 +1,8 @@
 package net.minestom.server.inventory.click;
 
 import net.minestom.server.inventory.AbstractInventory;
+import net.minestom.server.inventory.Inventory;
+import net.minestom.server.inventory.TransactionType;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.StackingRule;
 
@@ -8,7 +10,7 @@ import java.util.Map;
 
 public final class ClickProcessor {
 
-    public static ClickResult left(AbstractInventory inventory, int slot, ItemStack cursor) {
+    public static ClickResult.Single left(AbstractInventory inventory, int slot, ItemStack cursor) {
         ItemStack clicked = inventory.getItemStack(slot);
 
         final StackingRule cursorRule = cursor.getStackingRule();
@@ -34,12 +36,12 @@ public final class ClickProcessor {
         }
         if (cursor.isAir() && clicked.isAir()) {
             // return empty
-            return ClickResult.empty();
+            return ClickResultImpl.Single.empty();
         }
-        return new ClickResultImpl(cursor, Map.of(slot, clicked));
+        return new ClickResultImpl.Single(cursor, Map.of(slot, clicked));
     }
 
-    public static ClickResult right(AbstractInventory inventory, int slot, ItemStack cursor) {
+    public static ClickResult.Single right(AbstractInventory inventory, int slot, ItemStack cursor) {
         ItemStack clicked = inventory.getItemStack(slot);
         final StackingRule cursorRule = cursor.getStackingRule();
         final StackingRule clickedRule = clicked.getStackingRule();
@@ -48,7 +50,7 @@ public final class ClickProcessor {
             final int amount = clickedRule.getAmount(clicked) + 1;
             if (!clickedRule.canApply(clicked, amount)) {
                 // Size too large, stop here
-                return new ClickResultImpl(cursor, Map.of());
+                return new ClickResultImpl.Single(cursor, Map.of());
             } else {
                 // Add 1 to clicked
                 cursor = cursorRule.apply(cursor, operand -> operand - 1);
@@ -76,8 +78,14 @@ public final class ClickProcessor {
         }
         if (cursor.isAir() && clicked.isAir()) {
             // return empty
-            return ClickResult.empty();
+            return ClickResultImpl.Single.empty();
         }
-        return new ClickResultImpl(cursor, Map.of(slot, clicked));
+        return new ClickResultImpl.Single(cursor, Map.of(slot, clicked));
+    }
+
+    public static ClickResult.Shift shiftToInventory(Inventory inventory, ItemStack shifted) {
+        if (shifted.isAir()) return ClickResultImpl.Shift.empty();
+        var result = TransactionType.ADD.process(inventory, shifted);
+        return new ClickResultImpl.Shift(result.first(), result.second());
     }
 }

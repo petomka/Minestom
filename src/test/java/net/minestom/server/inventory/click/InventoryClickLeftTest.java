@@ -16,13 +16,13 @@ public class InventoryClickLeftTest extends ClickUtils {
 
     @Test
     public void empty() {
-        assertClick(inventory -> ClickProcessor.left(inventory, 0, ItemStack.AIR), ItemStack.AIR, Map.of());
+        assertSingleClick(inventory -> ClickProcessor.left(inventory, 0, ItemStack.AIR), ItemStack.AIR, Map.of());
     }
 
     @Test
     public void emptyClicked() {
         var item = ItemStack.of(Material.DIAMOND, 5);
-        assertClick(inventory -> {
+        assertSingleClick(inventory -> {
             inventory.setItemStack(0, item);
             return ClickProcessor.left(inventory, 0, ItemStack.AIR);
         }, item, Map.of(0, ItemStack.AIR));
@@ -31,7 +31,7 @@ public class InventoryClickLeftTest extends ClickUtils {
     @Test
     public void merge() {
         var item = ItemStack.of(Material.DIAMOND, 5);
-        assertClick(inventory -> {
+        assertSingleClick(inventory -> {
             inventory.setItemStack(1, item);
             return ClickProcessor.left(inventory, 1, item);
         }, ItemStack.AIR, Map.of(1, ItemStack.of(Material.DIAMOND, 10)));
@@ -40,7 +40,7 @@ public class InventoryClickLeftTest extends ClickUtils {
     @Test
     public void missClick() {
         var item = ItemStack.of(Material.DIAMOND);
-        assertClick(inventory -> {
+        assertSingleClick(inventory -> {
             inventory.setItemStack(0, item);
             return ClickProcessor.left(inventory, 1, ItemStack.AIR);
         }, ItemStack.AIR, Map.of());

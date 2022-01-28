@@ -52,17 +52,19 @@ public interface TransactionType {
             }
         }
         // Check air slot to fill
-        for (int i = start; i < end; i += step) {
-            ItemStack inventoryItem = inventory.getItemStack(i);
-            if (!inventoryItem.isAir()) continue;
-            if (!slotPredicate.test(i, inventoryItem)) {
-                // Cancelled transaction
-                continue;
+        if (!itemStack.isAir()) {
+            for (int i = start; i < end; i += step) {
+                ItemStack inventoryItem = inventory.getItemStack(i);
+                if (!inventoryItem.isAir()) continue;
+                if (!slotPredicate.test(i, inventoryItem)) {
+                    // Cancelled transaction
+                    continue;
+                }
+                // Fill the slot
+                itemChangesMap.put(i, itemStack);
+                itemStack = stackingRule.apply(itemStack, 0);
+                break;
             }
-            // Fill the slot
-            itemChangesMap.put(i, itemStack);
-            itemStack = stackingRule.apply(itemStack, 0);
-            break;
         }
         return Pair.of(itemStack, itemChangesMap);
     };

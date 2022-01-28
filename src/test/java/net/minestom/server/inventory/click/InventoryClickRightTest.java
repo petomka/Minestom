@@ -16,12 +16,12 @@ public class InventoryClickRightTest extends ClickUtils {
 
     @Test
     public void empty() {
-        assertClick(inventory -> ClickProcessor.right(inventory, 0, ItemStack.AIR), ItemStack.AIR, Map.of());
+        assertSingleClick(inventory -> ClickProcessor.right(inventory, 0, ItemStack.AIR), ItemStack.AIR, Map.of());
     }
 
     @Test
     public void insert() {
-        assertClick(inventory -> {
+        assertSingleClick(inventory -> {
             inventory.setItemStack(0, ItemStack.AIR);
             return ClickProcessor.right(inventory, 0, ItemStack.of(Material.DIAMOND, 5));
         }, ItemStack.of(Material.DIAMOND, 4), Map.of(0, ItemStack.of(Material.DIAMOND)));
@@ -29,7 +29,7 @@ public class InventoryClickRightTest extends ClickUtils {
 
     @Test
     public void append() {
-        assertClick(inventory -> {
+        assertSingleClick(inventory -> {
             inventory.setItemStack(0, ItemStack.of(Material.DIAMOND, 2));
             return ClickProcessor.right(inventory, 0, ItemStack.of(Material.DIAMOND, 5));
         }, ItemStack.of(Material.DIAMOND, 4), Map.of(0, ItemStack.of(Material.DIAMOND, 3)));
@@ -37,7 +37,7 @@ public class InventoryClickRightTest extends ClickUtils {
 
     @Test
     public void take() {
-        assertClick(inventory -> {
+        assertSingleClick(inventory -> {
             inventory.setItemStack(0, ItemStack.of(Material.DIAMOND, 32));
             return ClickProcessor.right(inventory, 0, ItemStack.AIR);
         }, ItemStack.of(Material.DIAMOND, 16), Map.of(0, ItemStack.of(Material.DIAMOND, 16)));
@@ -45,7 +45,7 @@ public class InventoryClickRightTest extends ClickUtils {
 
     @Test
     public void takeOneOff() {
-        assertClick(inventory -> {
+        assertSingleClick(inventory -> {
             inventory.setItemStack(0, ItemStack.of(Material.DIAMOND, 33));
             return ClickProcessor.right(inventory, 0, ItemStack.AIR);
         }, ItemStack.of(Material.DIAMOND, 17), Map.of(0, ItemStack.of(Material.DIAMOND, 16)));
@@ -53,7 +53,7 @@ public class InventoryClickRightTest extends ClickUtils {
 
     @Test
     public void appendFullSlot() {
-        assertClick(inventory -> {
+        assertSingleClick(inventory -> {
             inventory.setItemStack(0, ItemStack.of(Material.DIAMOND, 64));
             return ClickProcessor.right(inventory, 0, ItemStack.of(Material.DIAMOND, 5));
         }, ItemStack.of(Material.DIAMOND, 5), Map.of());
@@ -63,7 +63,7 @@ public class InventoryClickRightTest extends ClickUtils {
     public void swap() {
         var clicked = ItemStack.of(Material.STONE, 64);
         var cursor = ItemStack.of(Material.DIAMOND, 64);
-        assertClick(inventory -> {
+        assertSingleClick(inventory -> {
             inventory.setItemStack(0, clicked);
             return ClickProcessor.right(inventory, 0, cursor);
         }, clicked, Map.of(0, cursor));
