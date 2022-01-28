@@ -10,6 +10,7 @@ import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.item.StackingRule;
 import net.minestom.server.utils.MathUtils;
+import net.minestom.server.utils.inventory.PlayerInventoryUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -158,6 +159,17 @@ public final class ClickProcessor {
             changes.putAll(result.second());
             return new ClickResultImpl.Single(remaining, changes);
         }
+    }
+
+    public static ClickResult.Single held(PlayerInventory playerInventory, AbstractInventory inventory, int hoverSlot, int heldTarget) {
+        ItemStack hoverItem = inventory.getItemStack(hoverSlot);
+        if (playerInventory == inventory && hoverSlot == heldTarget)
+            return new ClickResultImpl.Single(hoverItem, Map.of()); // No change
+        if (!MathUtils.isBetween(heldTarget, 0, 8) && heldTarget != PlayerInventoryUtils.OFFHAND_SLOT)
+            return new ClickResultImpl.Single(hoverItem, Map.of()); // Held click is only supported for hotbar and offhand
+        // Swap items
+        final ItemStack playerItem = playerInventory.getItemStack(heldTarget);
+        return new ClickResultImpl.Single(playerItem, Map.of(heldTarget, hoverItem));
     }
 
     public static ClickResult.Double doubleClick(PlayerInventory playerInventory, Inventory inventory, ItemStack cursor) {
