@@ -10,6 +10,7 @@ import net.minestom.server.item.Material;
 import net.minestom.server.item.StackingRule;
 import net.minestom.server.utils.MathUtils;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public final class ClickProcessor {
@@ -157,6 +158,53 @@ public final class ClickProcessor {
         }
     }
 
+    public static ClickResult.Double doubleClick(PlayerInventory playerInventory, Inventory inventory, ItemStack cursor) {
+        if (cursor.isAir()) return ClickResultImpl.Double.empty();
+        final StackingRule cursorRule = cursor.getStackingRule();
+        final int amount = cursorRule.getAmount(cursor);
+        final int maxSize = cursorRule.getMaxSize(cursor);
+        final int remainingAmount = maxSize - amount;
+        if (remainingAmount == 0) {
+            // Item is already full
+            return new ClickResultImpl.Double(cursor, Map.of(), Map.of());
+        }
+        ItemStack remaining = cursorRule.apply(cursor, remainingAmount);
+        Map<Integer, ItemStack> playerChanges = new HashMap<>();
+        Map<Integer, ItemStack> inventoryChanges = new HashMap<>();
+        // Loop through open inventory
+        {
+            // TODO: check inventory type to avoid certain slots (e.g. crafting result)
+            var result = TransactionType.TAKE.process(inventory, remaining);
+            remaining = result.first();
+            inventoryChanges.putAll(result.second());
+        }
+        // Loop through player inventory
+        {
+            // 9->36
+            if (!remaining.isAir()) {
+                var result = TransactionType.TAKE.process(playerInventory, remaining, (slot, itemStack) -> true, 9, 36, 1);
+                remaining = result.first();
+                playerChanges.putAll(result.second());
+            }
+            // 8->0
+            if (!remaining.isAir()) {
+                var result = TransactionType.TAKE.process(playerInventory, remaining, (slot, itemStack) -> true, 8, 0, -1);
+                remaining = result.first();
+                playerChanges.putAll(result.second());
+            }
+        }
+
+        // Update cursor based on the remaining
+        if (remaining.isAir()) {
+            // Item has been filled
+            remaining = cursorRule.apply(cursor, maxSize);
+        } else {
+            final int tookAmount = remainingAmount - cursorRule.getAmount(remaining);
+            remaining = cursorRule.apply(cursor, amount + tookAmount);
+        }
+        return new ClickResultImpl.Double(remaining, playerChanges, inventoryChanges);
+    }
+
     public static ClickResult.Single doubleWithinPlayer(PlayerInventory inventory, ItemStack cursor) {
         if (cursor.isAir()) return ClickResultImpl.Single.empty();
         final StackingRule cursorRule = cursor.getStackingRule();
@@ -173,13 +221,13 @@ public final class ClickProcessor {
         remaining = result.first();
         Map<Integer, ItemStack> changes = result.second();
         // Try 0->8
-        if (!remaining.isAir()){
+        if (!remaining.isAir()) {
             var result2 = TransactionType.TAKE.process(inventory, remaining, (slot, itemStack) -> true, 0, 9, 1);
             remaining = result2.first();
             changes.putAll(result2.second());
         }
         // Try 37->40 (crafting slots)
-        if (!remaining.isAir()){
+        if (!remaining.isAir()) {
             var result2 = TransactionType.TAKE.process(inventory, remaining, (slot, itemStack) -> true, 37, 40, 1);
             remaining = result2.first();
             changes.putAll(result2.second());
@@ -193,7 +241,6 @@ public final class ClickProcessor {
             final int tookAmount = remainingAmount - cursorRule.getAmount(remaining);
             remaining = cursorRule.apply(cursor, amount + tookAmount);
         }
-
         return new ClickResultImpl.Single(remaining, changes);
     }
 }

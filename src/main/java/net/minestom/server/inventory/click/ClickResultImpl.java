@@ -20,6 +20,9 @@ class ClickResultImpl {
     record Double(@NotNull ItemStack remaining,
                   @NotNull Map<Integer, ItemStack> playerChanges,
                   @NotNull Map<Integer, ItemStack> inventoryChanges) implements ClickResult.Double {
+        static @NotNull Double empty() {
+            return new ClickResultImpl.Double(ItemStack.AIR, Map.of(), Map.of());
+        }
 
         public Double {
             playerChanges = Map.copyOf(playerChanges);
