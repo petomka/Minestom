@@ -351,6 +351,53 @@ public final class ClickProcessor {
         return new ClickResultImpl.Single(stackingRule.apply(cursor, finalCursorAmount), changes);
     }
 
+    public static ClickResult.Double rightDrag(PlayerInventory playerInventory, Inventory inventory,
+                                               ItemStack cursor, List<Pair<AbstractInventory, Integer>> slots) {
+        if (cursor.isAir()) return ClickResultImpl.Double.empty();
+        if (slots.isEmpty()) return new ClickResultImpl.Double(cursor, Map.of(), Map.of());
+        final StackingRule stackingRule = cursor.getStackingRule();
+        // Place all waiting drag action
+        int finalCursorAmount = stackingRule.getAmount(cursor);
+
+        Map<Integer, ItemStack> playerChanges = new HashMap<>();
+        Map<Integer, ItemStack> inventoryChanges = new HashMap<>();
+        for (var s : slots) {
+            if (finalCursorAmount <= 0)
+                break;
+            var inv = s.left();
+            int slot = s.right();
+            boolean mapOp = false;
+
+            ItemStack slotItem = inv.getItemStack(slot);
+            StackingRule slotItemRule = slotItem.getStackingRule();
+            if (stackingRule.canBeStacked(cursor, slotItem)) {
+                // Compatible item in the slot, increment by 1
+                final int amount = slotItemRule.getAmount(slotItem) + 1;
+                if (stackingRule.canApply(slotItem, amount)) {
+                    slotItem = stackingRule.apply(slotItem, amount);
+                    finalCursorAmount -= 1;
+                    mapOp = true;
+                }
+            } else if (slotItem.isAir()) {
+                // No item at the slot, place one
+                slotItem = stackingRule.apply(cursor, 1);
+                finalCursorAmount -= 1;
+                mapOp = true;
+            }
+
+            if (mapOp) {
+                if (inv == playerInventory) {
+                    playerChanges.put(slot, slotItem);
+                } else if (inv == inventory) {
+                    inventoryChanges.put(slot, slotItem);
+                } else {
+                    throw new IllegalStateException("Unknown inventory: " + inv);
+                }
+            }
+        }
+        return new ClickResultImpl.Double(stackingRule.apply(cursor, finalCursorAmount), playerChanges, inventoryChanges);
+    }
+
     public static ClickResult.Single rightDragWithinPlayer(PlayerInventory inventory, ItemStack cursor, List<Integer> slots) {
         if (cursor.isAir()) return ClickResultImpl.Single.empty();
         if (slots.isEmpty()) return new ClickResultImpl.Single(cursor, Map.of());
