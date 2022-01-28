@@ -156,4 +156,44 @@ public final class ClickProcessor {
             return new ClickResultImpl.Shift(remaining, changes);
         }
     }
+
+    public static ClickResult.Shift doubleWithinPlayer(PlayerInventory inventory, ItemStack cursor) {
+        if (cursor.isAir()) return ClickResultImpl.Shift.empty();
+        final StackingRule cursorRule = cursor.getStackingRule();
+        final int amount = cursorRule.getAmount(cursor);
+        final int maxSize = cursorRule.getMaxSize(cursor);
+        final int remainingAmount = maxSize - amount;
+        if (remainingAmount == 0) {
+            // Item is already full
+            return new ClickResultImpl.Shift(cursor, Map.of());
+        }
+        ItemStack remaining = cursorRule.apply(cursor, remainingAmount);
+        // Try taking from 9->35
+        var result = TransactionType.TAKE.process(inventory, remaining, (slot, itemStack) -> true, 9, 36, 1);
+        remaining = result.first();
+        Map<Integer, ItemStack> changes = result.second();
+        // Try 0->8
+        if (!remaining.isAir()){
+            var result2 = TransactionType.TAKE.process(inventory, remaining, (slot, itemStack) -> true, 0, 9, 1);
+            remaining = result2.first();
+            changes.putAll(result2.second());
+        }
+        // Try 37->40 (crafting slots)
+        if (!remaining.isAir()){
+            var result2 = TransactionType.TAKE.process(inventory, remaining, (slot, itemStack) -> true, 37, 40, 1);
+            remaining = result2.first();
+            changes.putAll(result2.second());
+        }
+
+        // Update cursor based on the remaining
+        if (remaining.isAir()) {
+            // Item has been filled
+            remaining = cursorRule.apply(cursor, maxSize);
+        } else {
+            final int tookAmount = remainingAmount - cursorRule.getAmount(remaining);
+            remaining = cursorRule.apply(cursor, amount + tookAmount);
+        }
+
+        return new ClickResultImpl.Shift(remaining, changes);
+    }
 }
