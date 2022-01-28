@@ -21,12 +21,14 @@ public class InventoryClickShiftPlayerTest extends ClickUtils {
 
     @Test
     public void empty() {
-        assertInventoryShift(inventory -> ClickProcessor.shiftToPlayer(inventory, ItemStack.of(Material.AIR)), ItemStack.AIR, Map.of());
+        assertInventoryShift(inventory -> ClickProcessor.shiftToPlayer(inventory, ItemStack.of(Material.AIR)),
+                ItemStack.AIR, Map.of());
     }
 
     @Test
     public void insertOne() {
-        assertInventoryShift(inventory -> ClickProcessor.shiftToPlayer(inventory, ItemStack.of(Material.DIAMOND)), ItemStack.AIR, Map.of(8, ItemStack.of(Material.DIAMOND)));
+        assertInventoryShift(inventory -> ClickProcessor.shiftToPlayer(inventory, ItemStack.of(Material.DIAMOND)),
+                ItemStack.AIR, Map.of(8, ItemStack.of(Material.DIAMOND)));
     }
 
     @Test
@@ -55,6 +57,16 @@ public class InventoryClickShiftPlayerTest extends ClickUtils {
             }
             return ClickProcessor.shiftToPlayer(inventory, ItemStack.of(Material.DIAMOND));
         }, ItemStack.of(Material.DIAMOND), Map.of());
+    }
+
+    @Test
+    public void almostOverflow() {
+        assertInventoryShift(inventory -> {
+            for (int i = 0; i < 35; i++) {
+                inventory.setItemStack(i, ItemStack.of(Material.DIAMOND, 64));
+            }
+            return ClickProcessor.shiftToPlayer(inventory, ItemStack.of(Material.DIAMOND));
+        }, ItemStack.AIR, Map.of(35, ItemStack.of(Material.DIAMOND)));
     }
 
     void assertInventoryShift(Function<PlayerInventory, ClickResult.Shift> filler,

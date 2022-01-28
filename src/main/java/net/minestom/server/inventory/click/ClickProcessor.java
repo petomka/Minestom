@@ -1,11 +1,14 @@
 package net.minestom.server.inventory.click;
 
+import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.inventory.AbstractInventory;
 import net.minestom.server.inventory.Inventory;
 import net.minestom.server.inventory.PlayerInventory;
 import net.minestom.server.inventory.TransactionType;
 import net.minestom.server.item.ItemStack;
+import net.minestom.server.item.Material;
 import net.minestom.server.item.StackingRule;
+import net.minestom.server.utils.MathUtils;
 
 import java.util.Map;
 
@@ -86,6 +89,7 @@ public final class ClickProcessor {
 
     public static ClickResult.Shift shiftToInventory(Inventory inventory, ItemStack shifted) {
         if (shifted.isAir()) return ClickResultImpl.Shift.empty();
+        // TODO: check inventory type to avoid certain slots (e.g. crafting result)
         var result = TransactionType.ADD.process(inventory, shifted);
         return new ClickResultImpl.Shift(result.first(), result.second());
     }
@@ -98,12 +102,58 @@ public final class ClickProcessor {
         if (remaining.isAir()) {
             return new ClickResultImpl.Shift(result.first(), result.second());
         }
-        // Try 35 -> 9
+        // Try 35->9
         var result2 = TransactionType.ADD.process(inventory, remaining, (slot, itemStack) -> true, 35, 9, -1);
 
         remaining = result2.first();
         var changes = result2.second();
         changes.putAll(result.second());
         return new ClickResultImpl.Shift(remaining, changes);
+    }
+
+    public static ClickResult.Shift shiftWithinPlayer(PlayerInventory inventory, int slot, ItemStack shifted) {
+        if (shifted.isAir()) return ClickResultImpl.Shift.empty();
+
+        // Handle equipment
+        if (MathUtils.isBetween(slot, 0, 35)) {
+            final Material material = shifted.getMaterial();
+            final EquipmentSlot equipmentSlot = material.registry().equipmentSlot();
+            if (equipmentSlot != null) {
+                // Shift-click equip
+                final ItemStack currentArmor = inventory.getEquipment(equipmentSlot);
+                if (currentArmor.isAir()) {
+                    final int armorSlot = equipmentSlot.armorSlot();
+                    return new ClickResultImpl.Shift(ItemStack.AIR, Map.of(armorSlot, shifted));
+                } else {
+                    // Equipment already present, do not change anything
+                    return new ClickResultImpl.Shift(shifted, Map.of());
+                }
+            }
+        }
+
+        // General shift
+        if (MathUtils.isBetween(slot, 0, 8)) {
+            // Shift from 9->35
+            var result = TransactionType.ADD.process(inventory, shifted, (s, itemStack) -> true, 9, 36, 1);
+            return new ClickResultImpl.Shift(result.first(), result.second());
+        } else if (MathUtils.isBetween(slot, 9, 35)) {
+            // Shift from 0->8
+            var result = TransactionType.ADD.process(inventory, shifted, (s, itemStack) -> true, 0, 9, 1);
+            return new ClickResultImpl.Shift(result.first(), result.second());
+        } else {
+            // Try shifting from 9->35
+            var result = TransactionType.ADD.process(inventory, shifted, (s, itemStack) -> true, 9, 36, 1);
+            var remaining = result.first();
+            if (remaining.isAir()) {
+                return new ClickResultImpl.Shift(result.first(), result.second());
+            }
+            // Try shifting from 0->8
+            var result2 = TransactionType.ADD.process(inventory, remaining, (s, itemStack) -> true, 0, 9, 1);
+
+            remaining = result2.first();
+            var changes = result2.second();
+            changes.putAll(result.second());
+            return new ClickResultImpl.Shift(remaining, changes);
+        }
     }
 }
