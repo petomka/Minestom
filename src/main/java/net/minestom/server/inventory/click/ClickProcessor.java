@@ -248,14 +248,13 @@ public final class ClickProcessor {
     public static ClickResult.Single leftDragWithinPlayer(PlayerInventory inventory, ItemStack cursor, List<Integer> slots) {
         if (cursor.isAir()) return ClickResultImpl.Single.empty();
         if (slots.isEmpty()) return new ClickResultImpl.Single(cursor, Map.of());
-        var stackingRule = cursor.getStackingRule();
+        final StackingRule stackingRule = cursor.getStackingRule();
         final int cursorAmount = stackingRule.getAmount(cursor);
         final int slotCount = slots.size();
         // Should be size of each defined slot (if not full)
         final int slotSize = Math.max(1, (int) ((float) cursorAmount / (float) slotCount));
         // Place all waiting drag action
         int finalCursorAmount = cursorAmount;
-
 
         Map<Integer, ItemStack> changes = new HashMap<>();
         for (int slot : slots) {
@@ -284,6 +283,37 @@ public final class ClickProcessor {
                 slotItem = stackingRule.apply(cursor, slotSize);
                 finalCursorAmount -= slotSize;
 
+                changes.put(slot, slotItem);
+            }
+        }
+        return new ClickResultImpl.Single(stackingRule.apply(cursor, finalCursorAmount), changes);
+    }
+
+    public static ClickResult.Single rightDragWithinPlayer(PlayerInventory inventory, ItemStack cursor, List<Integer> slots) {
+        if (cursor.isAir()) return ClickResultImpl.Single.empty();
+        if (slots.isEmpty()) return new ClickResultImpl.Single(cursor, Map.of());
+        final StackingRule stackingRule = cursor.getStackingRule();
+        // Place all waiting drag action
+        int finalCursorAmount = stackingRule.getAmount(cursor);
+
+        Map<Integer, ItemStack> changes = new HashMap<>();
+        for (int slot : slots) {
+            if (finalCursorAmount <= 0)
+                break;
+            ItemStack slotItem = inventory.getItemStack(slot);
+            StackingRule slotItemRule = slotItem.getStackingRule();
+            if (stackingRule.canBeStacked(cursor, slotItem)) {
+                // Compatible item in the slot, increment by 1
+                final int amount = slotItemRule.getAmount(slotItem) + 1;
+                if (stackingRule.canApply(slotItem, amount)) {
+                    slotItem = stackingRule.apply(slotItem, amount);
+                    finalCursorAmount -= 1;
+                    changes.put(slot, slotItem);
+                }
+            } else if (slotItem.isAir()) {
+                // No item at the slot, place one
+                slotItem = stackingRule.apply(cursor, 1);
+                finalCursorAmount -= 1;
                 changes.put(slot, slotItem);
             }
         }
