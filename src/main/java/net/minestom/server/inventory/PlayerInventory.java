@@ -255,7 +255,8 @@ public non-sealed class PlayerInventory extends AbstractInventory implements Equ
 
     @Override
     public boolean dragging(@NotNull Player player, int slot, int button) {
-        return dragHelper.test(player, slot, button, slot, this,
+        final int convertedSlot = convertPlayerInventorySlot(slot, OFFSET);
+        return dragHelper.test(player, slot, button, convertedSlot, this,
                 (entries) -> {
                     var slots = entries.stream().map(DragHelper.Entry::slot).toList();
                     return handleResult(ClickProcessor.leftDragWithinPlayer(this, getCursorItem(), slots),
