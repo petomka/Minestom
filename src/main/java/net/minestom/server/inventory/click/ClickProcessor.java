@@ -1,5 +1,6 @@
 package net.minestom.server.inventory.click;
 
+import it.unimi.dsi.fastutil.Pair;
 import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.inventory.AbstractInventory;
 import net.minestom.server.inventory.Inventory;
@@ -243,6 +244,67 @@ public final class ClickProcessor {
             remaining = cursorRule.apply(cursor, amount + tookAmount);
         }
         return new ClickResultImpl.Single(remaining, changes);
+    }
+
+    public static ClickResult.Double leftDrag(PlayerInventory playerInventory, Inventory inventory,
+                                              ItemStack cursor, List<Pair<AbstractInventory, Integer>> slots) {
+        if (cursor.isAir()) return ClickResultImpl.Double.empty();
+        if (slots.isEmpty()) return new ClickResultImpl.Double(cursor, Map.of(), Map.of());
+        final StackingRule stackingRule = cursor.getStackingRule();
+        final int cursorAmount = stackingRule.getAmount(cursor);
+        final int slotCount = slots.size();
+        // Should be size of each defined slot (if not full)
+        final int slotSize = Math.max(1, (int) ((float) cursorAmount / (float) slotCount));
+        // Place all waiting drag action
+        int finalCursorAmount = cursorAmount;
+
+        Map<Integer, ItemStack> playerChanges = new HashMap<>();
+        Map<Integer, ItemStack> inventoryChanges = new HashMap<>();
+        for (var s : slots) {
+            if (finalCursorAmount <= 0)
+                break;
+            var inv = s.left();
+            int slot = s.right();
+
+            ItemStack slotItem = inv.getItemStack(slot);
+            final StackingRule slotItemRule = slotItem.getStackingRule();
+            final int amount = slotItemRule.getAmount(slotItem);
+
+            boolean mapOp = false;
+            if (stackingRule.canBeStacked(cursor, slotItem)) {
+                if (stackingRule.canApply(slotItem, amount + slotSize)) {
+                    // Append divided amount to slot
+                    slotItem = stackingRule.apply(slotItem, a -> a + slotSize);
+                    finalCursorAmount -= slotSize;
+                } else {
+                    // Amount too big, fill as much as possible
+                    final int maxSize = stackingRule.getMaxSize(cursor);
+                    final int removedAmount = maxSize - amount;
+                    if (removedAmount <= 0)
+                        continue;
+                    slotItem = stackingRule.apply(slotItem, maxSize);
+                    finalCursorAmount -= removedAmount;
+                }
+                mapOp = true;
+            } else if (slotItem.isAir()) {
+                // Slot is empty, add divided amount
+                slotItem = stackingRule.apply(cursor, slotSize);
+                finalCursorAmount -= slotSize;
+
+                mapOp = true;
+            }
+
+            if (mapOp) {
+                if (inv == playerInventory) {
+                    playerChanges.put(slot, slotItem);
+                } else if (inv == inventory) {
+                    inventoryChanges.put(slot, slotItem);
+                } else {
+                    throw new IllegalStateException("Unknown inventory: " + inv);
+                }
+            }
+        }
+        return new ClickResultImpl.Double(stackingRule.apply(cursor, finalCursorAmount), playerChanges, inventoryChanges);
     }
 
     public static ClickResult.Single leftDragWithinPlayer(PlayerInventory inventory, ItemStack cursor, List<Integer> slots) {
