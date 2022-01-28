@@ -4,7 +4,10 @@ import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.EventDispatcher;
 import net.minestom.server.event.item.EntityEquipEvent;
-import net.minestom.server.inventory.click.*;
+import net.minestom.server.inventory.click.ClickProcessor;
+import net.minestom.server.inventory.click.ClickResult;
+import net.minestom.server.inventory.click.ClickType;
+import net.minestom.server.inventory.click.DragHelper;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.network.packet.server.play.SetSlotPacket;
 import net.minestom.server.network.packet.server.play.WindowItemsPacket;
@@ -220,17 +223,15 @@ public non-sealed class PlayerInventory extends AbstractInventory implements Equ
         final ItemStack cursor = getCursorItem();
         final boolean outsideDrop = slot == -999;
         final ItemStack clicked = outsideDrop ? ItemStack.AIR : getItemStack(convertedSlot);
-        final InventoryClickResult clickResult = clickProcessor.drop(player, this,
-                all, convertedSlot, button, clicked, cursor);
-        if (clickResult.isCancel()) {
-            update();
-            return false;
+        var drop = ClickProcessor.drop(all, slot, button, clicked, cursor);
+
+        player.dropItem(drop.drop());
+        if (outsideDrop) {
+            setCursorItem(drop.remaining());
+        } else {
+            setItemStack(convertedSlot, drop.remaining());
         }
-        final ItemStack resultClicked = clickResult.getClicked();
-        if (resultClicked != null && !outsideDrop) {
-            setItemStack(convertedSlot, resultClicked);
-        }
-        setCursorItem(clickResult.getCursor());
+        // TODO events
         return true;
     }
 

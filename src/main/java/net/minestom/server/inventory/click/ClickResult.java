@@ -25,4 +25,10 @@ public interface ClickResult {
 
         @NotNull Map<Integer, ItemStack> inventoryChanges();
     }
+
+    interface Drop extends ClickResult {
+        @NotNull ItemStack remaining();
+
+        @NotNull ItemStack drop();
+    }
 }

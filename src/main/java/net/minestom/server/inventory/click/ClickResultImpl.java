@@ -6,6 +6,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Map;
 
 class ClickResultImpl {
+    private ClickResultImpl() {
+    }
+
     record Single(@NotNull ItemStack remaining,
                   @NotNull Map<Integer, ItemStack> changedSlots) implements ClickResult.Single {
         static @NotNull Single empty() {
@@ -28,5 +31,9 @@ class ClickResultImpl {
             playerChanges = Map.copyOf(playerChanges);
             inventoryChanges = Map.copyOf(inventoryChanges);
         }
+    }
+
+    record Drop(@NotNull ItemStack remaining,
+                @NotNull ItemStack drop) implements ClickResult.Drop {
     }
 }

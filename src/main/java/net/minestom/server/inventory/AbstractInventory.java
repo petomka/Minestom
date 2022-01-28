@@ -3,7 +3,6 @@ package net.minestom.server.inventory;
 import net.minestom.server.event.GlobalHandles;
 import net.minestom.server.event.inventory.InventoryItemChangeEvent;
 import net.minestom.server.event.inventory.PlayerInventoryItemChangeEvent;
-import net.minestom.server.inventory.click.InventoryClickProcessor;
 import net.minestom.server.inventory.condition.InventoryCondition;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.tag.Tag;
@@ -35,8 +34,6 @@ public sealed abstract class AbstractInventory implements InventoryClickHandler,
 
     // list of conditions/callbacks assigned to this inventory
     protected final List<InventoryCondition> inventoryConditions = new CopyOnWriteArrayList<>();
-    // the click processor which process all the clicks in the inventory
-    protected final InventoryClickProcessor clickProcessor = new InventoryClickProcessor();
 
     private final Object nbtLock = new Object();
     private final MutableNBTCompound nbt = new MutableNBTCompound();

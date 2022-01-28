@@ -11,6 +11,7 @@ import net.minestom.server.item.Material;
 import net.minestom.server.item.StackingRule;
 import net.minestom.server.utils.MathUtils;
 import net.minestom.server.utils.inventory.PlayerInventoryUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -439,5 +440,37 @@ public final class ClickProcessor {
             }
         }
         return new ClickResultImpl.Single(stackingRule.apply(cursor, finalCursorAmount), changes);
+    }
+
+    public static ClickResult.Drop drop(boolean all, int slot, int button,
+                                 @NotNull ItemStack clicked, @NotNull ItemStack cursor) {
+        final StackingRule clickedRule = clicked.getStackingRule();
+        final StackingRule cursorRule = cursor.getStackingRule();
+
+        if (slot == -999) {
+            // Click outside
+            if (button == 0) {
+                // Left (drop all)
+                return new ClickResultImpl.Drop(ItemStack.AIR, cursor);
+            } else if (button == 1) {
+                // Right (drop 1)
+                final int remainingAmount = cursorRule.getAmount(cursor) - 1;
+                final ItemStack remaining = cursorRule.apply(cursor, remainingAmount);
+                final ItemStack dropItem = cursorRule.apply(cursor, 1);
+                return new ClickResultImpl.Drop(remaining, dropItem);
+            }
+        } else if (!all) {
+            if (button == 0) {
+                // Drop key Q (drop 1)
+                final int remainingAmount = clickedRule.getAmount(clicked) - 1;
+                final ItemStack remaining = clickedRule.apply(clicked, remainingAmount);
+                final ItemStack dropItem = cursorRule.apply(clicked, 1);
+                return new ClickResultImpl.Drop(remaining, dropItem);
+            } else if (button == 1) {
+                // Ctrl + Drop key Q (drop all)
+                return new ClickResultImpl.Drop(ItemStack.AIR, clicked);
+            }
+        }
+        throw new IllegalStateException("Unknown drop: " + button);
     }
 }

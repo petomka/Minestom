@@ -4,7 +4,10 @@ import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.Viewable;
 import net.minestom.server.entity.Player;
-import net.minestom.server.inventory.click.*;
+import net.minestom.server.inventory.click.ClickProcessor;
+import net.minestom.server.inventory.click.ClickResult;
+import net.minestom.server.inventory.click.ClickType;
+import net.minestom.server.inventory.click.DragHelper;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.network.packet.server.play.OpenWindowPacket;
 import net.minestom.server.network.packet.server.play.SetSlotPacket;
@@ -275,28 +278,21 @@ public non-sealed class Inventory extends AbstractInventory implements Viewable 
 
     @Override
     public boolean drop(@NotNull Player player, boolean all, int slot, int button) {
-        final PlayerInventory playerInventory = player.getInventory();
         final boolean isInWindow = isClickInWindow(slot);
-        final boolean outsideDrop = slot == -999;
         final int clickSlot = isInWindow ? slot : PlayerInventoryUtils.convertSlot(slot, offset);
-        final ItemStack clicked = outsideDrop ?
-                ItemStack.AIR : (isInWindow ? getItemStack(slot) : playerInventory.getItemStack(clickSlot));
+        var inv = isInWindow ? this : player.getInventory();
         final ItemStack cursor = getCursorItem(player);
-        final InventoryClickResult clickResult = clickProcessor.drop(player,
-                isInWindow ? this : playerInventory, all, clickSlot, button, clicked, cursor);
-        if (clickResult.isCancel()) {
-            updateAll(player);
-            return false;
+        final boolean outsideDrop = slot == -999;
+        final ItemStack clicked = outsideDrop ? ItemStack.AIR : inv.getItemStack(clickSlot);
+        var drop = ClickProcessor.drop(all, slot, button, clicked, cursor);
+
+        player.dropItem(drop.drop());
+        if (outsideDrop) {
+            setCursorItem(player, drop.remaining());
+        } else {
+            inv.setItemStack(clickSlot, drop.remaining());
         }
-        final ItemStack resultClicked = clickResult.getClicked();
-        if (!outsideDrop && resultClicked != null) {
-            if (isInWindow) {
-                setItemStack(slot, resultClicked);
-            } else {
-                playerInventory.setItemStack(clickSlot, resultClicked);
-            }
-        }
-        this.cursorPlayersItem.put(player, clickResult.getCursor());
+        // TODO events
         return true;
     }
 
