@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import static net.minestom.server.utils.inventory.PlayerInventoryUtils.*;
+
 public class InventoryClickDoublePlayerSelfTest extends ClickUtils {
 
     static {
@@ -44,5 +46,16 @@ public class InventoryClickDoublePlayerSelfTest extends ClickUtils {
             inventory.setItemStack(9, ItemStack.of(Material.DIAMOND, 48));
             return ClickProcessor.doubleWithinPlayer(inventory, ItemStack.of(Material.DIAMOND, 8));
         }, ItemStack.of(Material.DIAMOND, 64), Map.of(0, ItemStack.of(Material.DIAMOND, 40), 9, ItemStack.AIR));
+    }
+
+    @Test
+    public void craft() {
+        assertPlayerSingleClick(inventory -> {
+            inventory.setItemStack(CRAFT_SLOT_1, ItemStack.of(Material.DIAMOND));
+            inventory.setItemStack(CRAFT_SLOT_2, ItemStack.of(Material.DIAMOND));
+            inventory.setItemStack(CRAFT_SLOT_3, ItemStack.of(Material.DIAMOND));
+            inventory.setItemStack(CRAFT_SLOT_4, ItemStack.of(Material.DIAMOND));
+            return ClickProcessor.doubleWithinPlayer(inventory, ItemStack.of(Material.DIAMOND));
+        }, ItemStack.of(Material.DIAMOND, 5), Map.of(CRAFT_SLOT_1, ItemStack.AIR, CRAFT_SLOT_2, ItemStack.AIR, CRAFT_SLOT_3, ItemStack.AIR, CRAFT_SLOT_4, ItemStack.AIR));
     }
 }

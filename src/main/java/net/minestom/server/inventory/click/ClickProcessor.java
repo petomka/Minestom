@@ -230,7 +230,7 @@ public final class ClickProcessor {
         }
         // Try 37->40 (crafting slots)
         if (!remaining.isAir()) {
-            var result2 = TransactionType.TAKE.process(inventory, remaining, (slot, itemStack) -> true, 37, 40, 1);
+            var result2 = TransactionType.TAKE.process(inventory, remaining, (slot, itemStack) -> true, 37, 41, 1);
             remaining = result2.first();
             changes.putAll(result2.second());
         }
