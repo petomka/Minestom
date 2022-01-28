@@ -1,7 +1,9 @@
 package net.minestom.server.inventory.click;
 
+import net.minestom.server.api.TestUtils;
 import net.minestom.server.inventory.Inventory;
 import net.minestom.server.inventory.InventoryType;
+import net.minestom.server.inventory.PlayerInventory;
 import net.minestom.server.item.ItemStack;
 
 import java.util.Map;
@@ -11,11 +13,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ClickUtils {
     void assertSingleClick(Function<Inventory, ClickResult.Single> filler,
-                           ItemStack expectedCursor,
+                           ItemStack expectedRemaining,
                            Map<Integer, ItemStack> expectedChangedSlots) {
-        Inventory inventory = new Inventory(InventoryType.CHEST_1_ROW, "test");
+        Inventory inventory = new Inventory(InventoryType.HOPPER, "test");
         var result = filler.apply(inventory);
-        assertEquals(expectedCursor, result.cursor(), "Invalid cursor");
+        assertEquals(expectedRemaining, result.remaining(), "Invalid remaining");
+        assertEquals(expectedChangedSlots, result.changedSlots(), "Invalid changed slots");
+    }
+
+    void assertPlayerSingleClick(Function<PlayerInventory, ClickResult.Single> filler,
+                                 ItemStack expectedRemaining,
+                                 Map<Integer, ItemStack> expectedChangedSlots) {
+        var player = TestUtils.createDummyPlayer();
+        PlayerInventory inventory = new PlayerInventory(player);
+        var result = filler.apply(inventory);
+        assertEquals(expectedRemaining, result.remaining(), "Invalid remaining");
         assertEquals(expectedChangedSlots, result.changedSlots(), "Invalid changed slots");
     }
 }

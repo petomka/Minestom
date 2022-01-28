@@ -87,20 +87,20 @@ public final class ClickProcessor {
         return new ClickResultImpl.Single(cursor, Map.of(slot, clicked));
     }
 
-    public static ClickResult.Shift shiftToInventory(Inventory inventory, ItemStack shifted) {
-        if (shifted.isAir()) return ClickResultImpl.Shift.empty();
+    public static ClickResult.Single shiftToInventory(Inventory inventory, ItemStack shifted) {
+        if (shifted.isAir()) return ClickResultImpl.Single.empty();
         // TODO: check inventory type to avoid certain slots (e.g. crafting result)
         var result = TransactionType.ADD.process(inventory, shifted);
-        return new ClickResultImpl.Shift(result.first(), result.second());
+        return new ClickResultImpl.Single(result.first(), result.second());
     }
 
-    public static ClickResult.Shift shiftToPlayer(PlayerInventory inventory, ItemStack shifted) {
-        if (shifted.isAir()) return ClickResultImpl.Shift.empty();
+    public static ClickResult.Single shiftToPlayer(PlayerInventory inventory, ItemStack shifted) {
+        if (shifted.isAir()) return ClickResultImpl.Single.empty();
         // Try shifting from 8->0
         var result = TransactionType.ADD.process(inventory, shifted, (slot, itemStack) -> true, 8, 0, -1);
         var remaining = result.first();
         if (remaining.isAir()) {
-            return new ClickResultImpl.Shift(result.first(), result.second());
+            return new ClickResultImpl.Single(result.first(), result.second());
         }
         // Try 35->9
         var result2 = TransactionType.ADD.process(inventory, remaining, (slot, itemStack) -> true, 35, 9, -1);
@@ -108,11 +108,11 @@ public final class ClickProcessor {
         remaining = result2.first();
         var changes = result2.second();
         changes.putAll(result.second());
-        return new ClickResultImpl.Shift(remaining, changes);
+        return new ClickResultImpl.Single(remaining, changes);
     }
 
-    public static ClickResult.Shift shiftWithinPlayer(PlayerInventory inventory, int slot, ItemStack shifted) {
-        if (shifted.isAir()) return ClickResultImpl.Shift.empty();
+    public static ClickResult.Single shiftWithinPlayer(PlayerInventory inventory, int slot, ItemStack shifted) {
+        if (shifted.isAir()) return ClickResultImpl.Single.empty();
 
         // Handle equipment
         if (MathUtils.isBetween(slot, 0, 35)) {
@@ -123,10 +123,10 @@ public final class ClickProcessor {
                 final ItemStack currentArmor = inventory.getEquipment(equipmentSlot);
                 if (currentArmor.isAir()) {
                     final int armorSlot = equipmentSlot.armorSlot();
-                    return new ClickResultImpl.Shift(ItemStack.AIR, Map.of(armorSlot, shifted));
+                    return new ClickResultImpl.Single(ItemStack.AIR, Map.of(armorSlot, shifted));
                 } else {
                     // Equipment already present, do not change anything
-                    return new ClickResultImpl.Shift(shifted, Map.of());
+                    return new ClickResultImpl.Single(shifted, Map.of());
                 }
             }
         }
@@ -135,17 +135,17 @@ public final class ClickProcessor {
         if (MathUtils.isBetween(slot, 0, 8)) {
             // Shift from 9->35
             var result = TransactionType.ADD.process(inventory, shifted, (s, itemStack) -> true, 9, 36, 1);
-            return new ClickResultImpl.Shift(result.first(), result.second());
+            return new ClickResultImpl.Single(result.first(), result.second());
         } else if (MathUtils.isBetween(slot, 9, 35)) {
             // Shift from 0->8
             var result = TransactionType.ADD.process(inventory, shifted, (s, itemStack) -> true, 0, 9, 1);
-            return new ClickResultImpl.Shift(result.first(), result.second());
+            return new ClickResultImpl.Single(result.first(), result.second());
         } else {
             // Try shifting from 9->35
             var result = TransactionType.ADD.process(inventory, shifted, (s, itemStack) -> true, 9, 36, 1);
             var remaining = result.first();
             if (remaining.isAir()) {
-                return new ClickResultImpl.Shift(result.first(), result.second());
+                return new ClickResultImpl.Single(result.first(), result.second());
             }
             // Try shifting from 0->8
             var result2 = TransactionType.ADD.process(inventory, remaining, (s, itemStack) -> true, 0, 9, 1);
@@ -153,19 +153,19 @@ public final class ClickProcessor {
             remaining = result2.first();
             var changes = result2.second();
             changes.putAll(result.second());
-            return new ClickResultImpl.Shift(remaining, changes);
+            return new ClickResultImpl.Single(remaining, changes);
         }
     }
 
-    public static ClickResult.Shift doubleWithinPlayer(PlayerInventory inventory, ItemStack cursor) {
-        if (cursor.isAir()) return ClickResultImpl.Shift.empty();
+    public static ClickResult.Single doubleWithinPlayer(PlayerInventory inventory, ItemStack cursor) {
+        if (cursor.isAir()) return ClickResultImpl.Single.empty();
         final StackingRule cursorRule = cursor.getStackingRule();
         final int amount = cursorRule.getAmount(cursor);
         final int maxSize = cursorRule.getMaxSize(cursor);
         final int remainingAmount = maxSize - amount;
         if (remainingAmount == 0) {
             // Item is already full
-            return new ClickResultImpl.Shift(cursor, Map.of());
+            return new ClickResultImpl.Single(cursor, Map.of());
         }
         ItemStack remaining = cursorRule.apply(cursor, remainingAmount);
         // Try taking from 9->35
@@ -194,6 +194,6 @@ public final class ClickProcessor {
             remaining = cursorRule.apply(cursor, amount + tookAmount);
         }
 
-        return new ClickResultImpl.Shift(remaining, changes);
+        return new ClickResultImpl.Single(remaining, changes);
     }
 }

@@ -10,20 +10,19 @@ import java.util.Map;
 public interface ClickResult {
 
     /**
-     * Result affecting a single inventory/slot.
+     * Result affecting a single inventory.
      */
     interface Single extends ClickResult {
-        @NotNull ItemStack cursor();
+        @NotNull ItemStack remaining();
 
         @NotNull Map<Integer, ItemStack> changedSlots();
     }
 
-    /**
-     * Handles shift clicks.
-     */
-    interface Shift extends ClickResult {
+    interface Double extends ClickResult {
         @NotNull ItemStack remaining();
 
-        @NotNull Map<Integer, ItemStack> changedSlots();
+        @NotNull Map<Integer, ItemStack> playerChanges();
+
+        @NotNull Map<Integer, ItemStack> inventoryChanges();
     }
 }
