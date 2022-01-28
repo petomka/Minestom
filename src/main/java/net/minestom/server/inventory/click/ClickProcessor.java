@@ -2,6 +2,7 @@ package net.minestom.server.inventory.click;
 
 import net.minestom.server.inventory.AbstractInventory;
 import net.minestom.server.inventory.Inventory;
+import net.minestom.server.inventory.PlayerInventory;
 import net.minestom.server.inventory.TransactionType;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.StackingRule;
@@ -87,5 +88,22 @@ public final class ClickProcessor {
         if (shifted.isAir()) return ClickResultImpl.Shift.empty();
         var result = TransactionType.ADD.process(inventory, shifted);
         return new ClickResultImpl.Shift(result.first(), result.second());
+    }
+
+    public static ClickResult.Shift shiftToPlayer(PlayerInventory inventory, ItemStack shifted) {
+        if (shifted.isAir()) return ClickResultImpl.Shift.empty();
+        // Try shifting from 8->0
+        var result = TransactionType.ADD.process(inventory, shifted, (slot, itemStack) -> true, 8, 0, -1);
+        var remaining = result.first();
+        if (remaining.isAir()) {
+            return new ClickResultImpl.Shift(result.first(), result.second());
+        }
+        // Try 35 -> 9
+        var result2 = TransactionType.ADD.process(inventory, remaining, (slot, itemStack) -> true, 35, 9, -1);
+
+        remaining = result2.first();
+        var changes = result2.second();
+        changes.putAll(result.second());
+        return new ClickResultImpl.Shift(remaining, changes);
     }
 }
