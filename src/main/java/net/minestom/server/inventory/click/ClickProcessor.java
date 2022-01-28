@@ -11,6 +11,7 @@ import net.minestom.server.item.StackingRule;
 import net.minestom.server.utils.MathUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class ClickProcessor {
@@ -242,5 +243,50 @@ public final class ClickProcessor {
             remaining = cursorRule.apply(cursor, amount + tookAmount);
         }
         return new ClickResultImpl.Single(remaining, changes);
+    }
+
+    public static ClickResult.Single leftDragWithinPlayer(PlayerInventory inventory, ItemStack cursor, List<Integer> slots) {
+        if (cursor.isAir()) return ClickResultImpl.Single.empty();
+        if (slots.isEmpty()) return new ClickResultImpl.Single(cursor, Map.of());
+        var stackingRule = cursor.getStackingRule();
+        final int cursorAmount = stackingRule.getAmount(cursor);
+        final int slotCount = slots.size();
+        // Should be size of each defined slot (if not full)
+        final int slotSize = Math.max(1, (int) ((float) cursorAmount / (float) slotCount));
+        // Place all waiting drag action
+        int finalCursorAmount = cursorAmount;
+
+
+        Map<Integer, ItemStack> changes = new HashMap<>();
+        for (int slot : slots) {
+            if (finalCursorAmount <= 0)
+                break;
+            ItemStack slotItem = inventory.getItemStack(slot);
+            final StackingRule slotItemRule = slotItem.getStackingRule();
+            final int amount = slotItemRule.getAmount(slotItem);
+            if (stackingRule.canBeStacked(cursor, slotItem)) {
+                if (stackingRule.canApply(slotItem, amount + slotSize)) {
+                    // Append divided amount to slot
+                    slotItem = stackingRule.apply(slotItem, a -> a + slotSize);
+                    finalCursorAmount -= slotSize;
+                } else {
+                    // Amount too big, fill as much as possible
+                    final int maxSize = stackingRule.getMaxSize(cursor);
+                    final int removedAmount = maxSize - amount;
+                    if (removedAmount <= 0)
+                        continue;
+                    slotItem = stackingRule.apply(slotItem, maxSize);
+                    finalCursorAmount -= removedAmount;
+                }
+                changes.put(slot, slotItem);
+            } else if (slotItem.isAir()) {
+                // Slot is empty, add divided amount
+                slotItem = stackingRule.apply(cursor, slotSize);
+                finalCursorAmount -= slotSize;
+
+                changes.put(slot, slotItem);
+            }
+        }
+        return new ClickResultImpl.Single(stackingRule.apply(cursor, finalCursorAmount), changes);
     }
 }
