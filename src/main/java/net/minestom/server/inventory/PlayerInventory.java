@@ -3,18 +3,20 @@ package net.minestom.server.inventory;
 import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.EventDispatcher;
+import net.minestom.server.event.inventory.InventoryPreClickEvent;
 import net.minestom.server.event.item.EntityEquipEvent;
 import net.minestom.server.inventory.click.ClickProcessor;
 import net.minestom.server.inventory.click.ClickResult;
 import net.minestom.server.inventory.click.ClickType;
 import net.minestom.server.inventory.click.DragHelper;
+import net.minestom.server.inventory.condition.InventoryCondition;
+import net.minestom.server.inventory.condition.InventoryConditionResult;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.network.packet.server.play.SetSlotPacket;
 import net.minestom.server.network.packet.server.play.WindowItemsPacket;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import static net.minestom.server.utils.inventory.PlayerInventoryUtils.*;
@@ -199,6 +201,7 @@ public non-sealed class PlayerInventory extends AbstractInventory implements Equ
     @Override
     public boolean leftClick(@NotNull Player player, int slot) {
         final int convertedSlot = convertPlayerInventorySlot(slot, OFFSET);
+        test(convertedSlot, ClickType.LEFT_CLICK, getCursorItem(), getItemStack(convertedSlot));
         return handleResult(ClickProcessor.left(this, convertedSlot, getCursorItem()),
                 this::setCursorItem, ClickType.LEFT_CLICK);
     }
@@ -275,13 +278,44 @@ public non-sealed class PlayerInventory extends AbstractInventory implements Equ
                 this::setCursorItem, ClickType.DOUBLE_CLICK);
     }
 
-    private boolean handleResult(ClickResult.Single result, Consumer<ItemStack> remainingSetter, ClickType clickType) {
-        Map<Integer, ItemStack> changes = result.changedSlots();
-        changes.forEach((slot, itemStack) -> {
-            // TODO call events (conditions/pre-click)
-        });
+    private void test(int slot, ClickType clickType, ItemStack cursor, ItemStack clicked) {
+        // Reset the didCloseInventory field
+        // Wait for inventory conditions + events to possibly close the inventory
+        player.UNSAFE_changeDidCloseInventory(false);
+        // InventoryPreClickEvent
+        {
+            InventoryPreClickEvent inventoryPreClickEvent = new InventoryPreClickEvent(null, player, slot, clickType,
+                    clicked, cursor);
+            EventDispatcher.call(inventoryPreClickEvent);
+            cursor = inventoryPreClickEvent.getCursorItem();
+            clicked = inventoryPreClickEvent.getClickedItem();
+            if (inventoryPreClickEvent.isCancelled()) {
+                //clickResult.setCancel(true);
+            }
+        }
+        // Inventory conditions
+        {
+            final List<InventoryCondition> inventoryConditions = getInventoryConditions();
+            for (InventoryCondition inventoryCondition : inventoryConditions) {
+                var result = new InventoryConditionResult(clicked, cursor);
+                inventoryCondition.accept(player, slot, clickType, result);
 
-        changes.forEach((slot, itemStack) -> {
+                cursor = result.getCursorItem();
+                clicked = result.getClickedItem();
+                if (result.isCancel()) {
+                    //clickResult.setCancel(true);
+                }
+            }
+            // Cancel the click if the inventory has been closed by Player#closeInventory within an inventory listener
+            if (player.didCloseInventory()) {
+                //clickResult.setCancel(true);
+                player.UNSAFE_changeDidCloseInventory(false);
+            }
+        }
+    }
+
+    private boolean handleResult(ClickResult.Single result, Consumer<ItemStack> remainingSetter, ClickType clickType) {
+        result.changedSlots().forEach((slot, itemStack) -> {
             setItemStack(slot, itemStack);
             callClickEvent(player, null, slot, clickType, itemStack, getCursorItem());
         });
