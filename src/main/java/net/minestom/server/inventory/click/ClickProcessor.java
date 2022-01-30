@@ -19,9 +19,7 @@ import java.util.Map;
 
 public final class ClickProcessor {
 
-    public static ClickResult.Single left(AbstractInventory inventory, int slot, ItemStack cursor) {
-        ItemStack clicked = inventory.getItemStack(slot);
-
+    public static ClickResult.Single left(int slot, ItemStack clicked, ItemStack cursor) {
         final StackingRule cursorRule = cursor.getStackingRule();
         final StackingRule clickedRule = clicked.getStackingRule();
         if (cursorRule.canBeStacked(cursor, clicked)) {
@@ -50,8 +48,7 @@ public final class ClickProcessor {
         return new ClickResultImpl.Single(cursor, Map.of(slot, clicked));
     }
 
-    public static ClickResult.Single right(AbstractInventory inventory, int slot, ItemStack cursor) {
-        ItemStack clicked = inventory.getItemStack(slot);
+    public static ClickResult.Single right(int slot, ItemStack clicked, ItemStack cursor) {
         final StackingRule cursorRule = cursor.getStackingRule();
         final StackingRule clickedRule = clicked.getStackingRule();
         if (clickedRule.canBeStacked(clicked, cursor)) {
@@ -443,7 +440,7 @@ public final class ClickProcessor {
     }
 
     public static ClickResult.Drop drop(boolean all, int slot, int button,
-                                 @NotNull ItemStack clicked, @NotNull ItemStack cursor) {
+                                        @NotNull ItemStack clicked, @NotNull ItemStack cursor) {
         final StackingRule clickedRule = clicked.getStackingRule();
         final StackingRule cursorRule = cursor.getStackingRule();
 

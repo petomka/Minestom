@@ -206,14 +206,19 @@ public non-sealed class PlayerInventory extends AbstractInventory implements Equ
             update();
             return false;
         }
-        return handleResult(ClickProcessor.left(this, temp.clicked(), temp.cursor()),
+        return handleResult(ClickProcessor.left(convertedSlot, temp.clicked(), temp.cursor()),
                 this::setCursorItem, ClickType.LEFT_CLICK);
     }
 
     @Override
     public boolean rightClick(@NotNull Player player, int slot) {
         final int convertedSlot = convertPlayerInventorySlot(slot, OFFSET);
-        return handleResult(ClickProcessor.right(this, convertedSlot, getCursorItem()),
+        final var temp = handlePreClick(convertedSlot, ClickType.RIGHT_CLICK, getCursorItem(), getItemStack(convertedSlot));
+        if (temp.cancelled()) {
+            update();
+            return false;
+        }
+        return handleResult(ClickProcessor.right(convertedSlot, temp.clicked(), temp.cursor()),
                 this::setCursorItem, ClickType.RIGHT_CLICK);
     }
 

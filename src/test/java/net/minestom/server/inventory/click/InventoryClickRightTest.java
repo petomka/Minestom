@@ -16,46 +16,50 @@ public class InventoryClickRightTest extends ClickUtils {
 
     @Test
     public void empty() {
-        assertSingleClick(inventory -> ClickProcessor.right(inventory, 0, ItemStack.AIR), ItemStack.AIR, Map.of());
+        assertSingleClick(inventory -> ClickProcessor.right(0, ItemStack.AIR, ItemStack.AIR), ItemStack.AIR, Map.of());
     }
 
     @Test
     public void insert() {
         assertSingleClick(inventory -> {
             inventory.setItemStack(0, ItemStack.AIR);
-            return ClickProcessor.right(inventory, 0, ItemStack.of(Material.DIAMOND, 5));
+            return ClickProcessor.right(0, ItemStack.AIR, ItemStack.of(Material.DIAMOND, 5));
         }, ItemStack.of(Material.DIAMOND, 4), Map.of(0, ItemStack.of(Material.DIAMOND)));
     }
 
     @Test
     public void append() {
         assertSingleClick(inventory -> {
-            inventory.setItemStack(0, ItemStack.of(Material.DIAMOND, 2));
-            return ClickProcessor.right(inventory, 0, ItemStack.of(Material.DIAMOND, 5));
+            var item = ItemStack.of(Material.DIAMOND, 2);
+            inventory.setItemStack(0, item);
+            return ClickProcessor.right(0, item, ItemStack.of(Material.DIAMOND, 5));
         }, ItemStack.of(Material.DIAMOND, 4), Map.of(0, ItemStack.of(Material.DIAMOND, 3)));
     }
 
     @Test
     public void take() {
         assertSingleClick(inventory -> {
-            inventory.setItemStack(0, ItemStack.of(Material.DIAMOND, 32));
-            return ClickProcessor.right(inventory, 0, ItemStack.AIR);
+            var item = ItemStack.of(Material.DIAMOND, 32);
+            inventory.setItemStack(0, item);
+            return ClickProcessor.right(0, item, ItemStack.AIR);
         }, ItemStack.of(Material.DIAMOND, 16), Map.of(0, ItemStack.of(Material.DIAMOND, 16)));
     }
 
     @Test
     public void takeOneOff() {
         assertSingleClick(inventory -> {
-            inventory.setItemStack(0, ItemStack.of(Material.DIAMOND, 33));
-            return ClickProcessor.right(inventory, 0, ItemStack.AIR);
+            var item = ItemStack.of(Material.DIAMOND, 33);
+            inventory.setItemStack(0, item);
+            return ClickProcessor.right(0, item, ItemStack.AIR);
         }, ItemStack.of(Material.DIAMOND, 17), Map.of(0, ItemStack.of(Material.DIAMOND, 16)));
     }
 
     @Test
     public void appendFullSlot() {
         assertSingleClick(inventory -> {
-            inventory.setItemStack(0, ItemStack.of(Material.DIAMOND, 64));
-            return ClickProcessor.right(inventory, 0, ItemStack.of(Material.DIAMOND, 5));
+            var item = ItemStack.of(Material.DIAMOND, 64);
+            inventory.setItemStack(0, item);
+            return ClickProcessor.right(0, item, ItemStack.of(Material.DIAMOND, 5));
         }, ItemStack.of(Material.DIAMOND, 5), Map.of());
     }
 
@@ -65,7 +69,7 @@ public class InventoryClickRightTest extends ClickUtils {
         var cursor = ItemStack.of(Material.DIAMOND, 64);
         assertSingleClick(inventory -> {
             inventory.setItemStack(0, clicked);
-            return ClickProcessor.right(inventory, 0, cursor);
+            return ClickProcessor.right(0, clicked, cursor);
         }, clicked, Map.of(0, cursor));
     }
 }

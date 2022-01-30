@@ -229,7 +229,7 @@ public non-sealed class Inventory extends AbstractInventory implements Viewable 
         final boolean isInWindow = isClickInWindow(slot);
         final int clickSlot = isInWindow ? slot : PlayerInventoryUtils.convertSlot(slot, offset);
         var inventory = isInWindow ? this : player.getInventory();
-        return handleResult(ClickProcessor.left(inventory, clickSlot, getCursorItem(player)),
+        return handleResult(ClickProcessor.left(clickSlot, inventory.getItemStack(clickSlot), getCursorItem(player)),
                 itemStack -> setCursorItem(player, itemStack), player, inventory, ClickType.LEFT_CLICK);
     }
 
@@ -238,7 +238,7 @@ public non-sealed class Inventory extends AbstractInventory implements Viewable 
         final boolean isInWindow = isClickInWindow(slot);
         final int clickSlot = isInWindow ? slot : PlayerInventoryUtils.convertSlot(slot, offset);
         var inventory = isInWindow ? this : player.getInventory();
-        return handleResult(ClickProcessor.right(inventory, clickSlot, getCursorItem(player)),
+        return handleResult(ClickProcessor.right(clickSlot, inventory.getItemStack(clickSlot), getCursorItem(player)),
                 itemStack -> setCursorItem(player, itemStack), player, inventory, ClickType.RIGHT_CLICK);
     }
 
