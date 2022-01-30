@@ -5,7 +5,6 @@ import net.minestom.server.api.EnvTest;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.inventory.InventoryPreClickEvent;
-import net.minestom.server.inventory.Inventory;
 import net.minestom.server.inventory.click.ClickType;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
@@ -35,7 +34,7 @@ public class LeftClickIntegrationTest {
                 assertEquals(ClickType.LEFT_CLICK, event.getClickType());
                 assertEquals(ItemStack.AIR, inventory.getCursorItem());
             });
-            leftClick(player, null, 0);
+            leftClick(player, 0);
         }
         // Pickup diamond
         {
@@ -44,7 +43,7 @@ public class LeftClickIntegrationTest {
                 assertEquals(ItemStack.AIR, inventory.getCursorItem());
                 assertEquals(ItemStack.of(Material.DIAMOND), inventory.getItemStack(1));
             });
-            leftClick(player, null, 1);
+            leftClick(player, 1);
             // Verify inventory changes
             assertEquals(ItemStack.of(Material.DIAMOND), inventory.getCursorItem());
             assertEquals(ItemStack.AIR, inventory.getItemStack(1));
@@ -55,22 +54,21 @@ public class LeftClickIntegrationTest {
                 assertEquals(ItemStack.of(Material.DIAMOND), inventory.getCursorItem());
                 assertEquals(ItemStack.AIR, inventory.getItemStack(1));
             });
-            leftClick(player, null, 1);
+            leftClick(player, 1);
             assertEquals(ItemStack.AIR, inventory.getCursorItem());
             assertEquals(ItemStack.of(Material.DIAMOND), inventory.getItemStack(1));
         }
         // Cancel event
         {
             listener.followup(event -> event.setCancelled(true));
-            leftClick(player, null, 1);
+            leftClick(player, 1);
             assertEquals(ItemStack.AIR, inventory.getCursorItem(), "Left click cancellation did not work");
             assertEquals(ItemStack.of(Material.DIAMOND), inventory.getItemStack(1));
         }
     }
 
-    private void leftClick(Player player, Inventory inventory, int slot) {
-        byte windowId = inventory != null ? inventory.getWindowId() : 0;
-        player.addPacketToQueue(new ClientClickWindowPacket(windowId, 0, (short) PlayerInventoryUtils.convertToPacketSlot(slot), (byte) 0,
+    private void leftClick(Player player, int slot) {
+        player.addPacketToQueue(new ClientClickWindowPacket((byte) 0, 0, (short) PlayerInventoryUtils.convertToPacketSlot(slot), (byte) 0,
                 ClientClickWindowPacket.ClickType.PICKUP, List.of(), ItemStack.AIR));
         player.interpretPacketQueue();
     }
