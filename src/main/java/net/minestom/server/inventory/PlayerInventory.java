@@ -201,8 +201,12 @@ public non-sealed class PlayerInventory extends AbstractInventory implements Equ
     @Override
     public boolean leftClick(@NotNull Player player, int slot) {
         final int convertedSlot = convertPlayerInventorySlot(slot, OFFSET);
-        test(convertedSlot, ClickType.LEFT_CLICK, getCursorItem(), getItemStack(convertedSlot));
-        return handleResult(ClickProcessor.left(this, convertedSlot, getCursorItem()),
+        final var temp = handlePreClick(convertedSlot, ClickType.LEFT_CLICK, getCursorItem(), getItemStack(convertedSlot));
+        if (temp.cancelled()) {
+            update();
+            return false;
+        }
+        return handleResult(ClickProcessor.left(this, temp.clicked(), temp.cursor()),
                 this::setCursorItem, ClickType.LEFT_CLICK);
     }
 
@@ -278,7 +282,11 @@ public non-sealed class PlayerInventory extends AbstractInventory implements Equ
                 this::setCursorItem, ClickType.DOUBLE_CLICK);
     }
 
-    private void test(int slot, ClickType clickType, ItemStack cursor, ItemStack clicked) {
+    record ClickTemp(ItemStack cursor, ItemStack clicked, boolean cancelled) {
+    }
+
+    private ClickTemp handlePreClick(int slot, ClickType clickType, ItemStack cursor, ItemStack clicked) {
+        boolean cancelled = false;
         // Reset the didCloseInventory field
         // Wait for inventory conditions + events to possibly close the inventory
         player.UNSAFE_changeDidCloseInventory(false);
@@ -290,7 +298,7 @@ public non-sealed class PlayerInventory extends AbstractInventory implements Equ
             cursor = inventoryPreClickEvent.getCursorItem();
             clicked = inventoryPreClickEvent.getClickedItem();
             if (inventoryPreClickEvent.isCancelled()) {
-                //clickResult.setCancel(true);
+                cancelled = true;
             }
         }
         // Inventory conditions
@@ -303,15 +311,16 @@ public non-sealed class PlayerInventory extends AbstractInventory implements Equ
                 cursor = result.getCursorItem();
                 clicked = result.getClickedItem();
                 if (result.isCancel()) {
-                    //clickResult.setCancel(true);
+                    cancelled = true;
                 }
             }
             // Cancel the click if the inventory has been closed by Player#closeInventory within an inventory listener
             if (player.didCloseInventory()) {
-                //clickResult.setCancel(true);
+                cancelled = true;
                 player.UNSAFE_changeDidCloseInventory(false);
             }
         }
+        return new ClickTemp(cursor, clicked, cancelled);
     }
 
     private boolean handleResult(ClickResult.Single result, Consumer<ItemStack> remainingSetter, ClickType clickType) {

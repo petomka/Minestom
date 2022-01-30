@@ -9,6 +9,8 @@ import java.util.Map;
 @ApiStatus.Internal
 public interface ClickResult {
 
+    boolean requireUpdate();
+
     /**
      * Result affecting a single inventory.
      */

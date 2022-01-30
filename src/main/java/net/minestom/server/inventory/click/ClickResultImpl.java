@@ -10,7 +10,8 @@ class ClickResultImpl {
     }
 
     record Single(@NotNull ItemStack remaining,
-                  @NotNull Map<Integer, ItemStack> changedSlots) implements ClickResult.Single {
+                  @NotNull Map<Integer, ItemStack> changedSlots,
+                  boolean requireUpdate) implements ClickResult.Single {
         static @NotNull Single empty() {
             return new ClickResultImpl.Single(ItemStack.AIR, Map.of());
         }
@@ -18,11 +19,17 @@ class ClickResultImpl {
         public Single {
             changedSlots = Map.copyOf(changedSlots);
         }
+
+        public Single(@NotNull ItemStack remaining,
+                      @NotNull Map<Integer, ItemStack> changedSlots) {
+            this(remaining, changedSlots, false);
+        }
     }
 
     record Double(@NotNull ItemStack remaining,
                   @NotNull Map<Integer, ItemStack> playerChanges,
-                  @NotNull Map<Integer, ItemStack> inventoryChanges) implements ClickResult.Double {
+                  @NotNull Map<Integer, ItemStack> inventoryChanges,
+                  boolean requireUpdate) implements ClickResult.Double {
         static @NotNull Double empty() {
             return new ClickResultImpl.Double(ItemStack.AIR, Map.of(), Map.of());
         }
@@ -31,9 +38,20 @@ class ClickResultImpl {
             playerChanges = Map.copyOf(playerChanges);
             inventoryChanges = Map.copyOf(inventoryChanges);
         }
+
+        public Double(@NotNull ItemStack remaining,
+                      @NotNull Map<Integer, ItemStack> playerChanges,
+                      @NotNull Map<Integer, ItemStack> inventoryChanges) {
+            this(remaining, playerChanges, inventoryChanges, false);
+        }
     }
 
     record Drop(@NotNull ItemStack remaining,
-                @NotNull ItemStack drop) implements ClickResult.Drop {
+                @NotNull ItemStack drop,
+                boolean requireUpdate) implements ClickResult.Drop {
+        public Drop(@NotNull ItemStack remaining,
+                    @NotNull ItemStack drop) {
+            this(remaining, drop, false);
+        }
     }
 }
