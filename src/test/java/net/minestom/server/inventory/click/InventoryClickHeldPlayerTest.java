@@ -16,7 +16,7 @@ public class InventoryClickHeldPlayerTest extends ClickUtils {
 
     @Test
     public void empty() {
-        assertPlayerSingleClick(inventory -> ClickProcessor.held(inventory, inventory, 0, 0),
+        assertPlayerSingleClick(inventory -> ClickProcessor.held(inventory, inventory, 0, ItemStack.AIR, 0, ItemStack.AIR),
                 ItemStack.AIR, Map.of());
     }
 
@@ -24,7 +24,7 @@ public class InventoryClickHeldPlayerTest extends ClickUtils {
     public void retrieve() {
         assertPlayerSingleClick(inventory -> {
             inventory.setItemStack(0, ItemStack.of(Material.DIAMOND));
-            return ClickProcessor.held(inventory, inventory, 1, 0);
+            return ClickProcessor.held(inventory, inventory, 1, ItemStack.AIR, 0, ItemStack.of(Material.DIAMOND));
         }, ItemStack.of(Material.DIAMOND), Map.of(0, ItemStack.AIR));
     }
 
@@ -33,7 +33,7 @@ public class InventoryClickHeldPlayerTest extends ClickUtils {
         assertPlayerSingleClick(inventory -> {
             inventory.setItemStack(0, ItemStack.of(Material.DIAMOND));
             inventory.setItemStack(1, ItemStack.of(Material.GOLD_INGOT));
-            return ClickProcessor.held(inventory, inventory, 1, 0);
+            return ClickProcessor.held(inventory, inventory, 1, ItemStack.of(Material.GOLD_INGOT), 0, ItemStack.of(Material.DIAMOND));
         }, ItemStack.of(Material.DIAMOND), Map.of(0, ItemStack.of(Material.GOLD_INGOT)));
     }
 }

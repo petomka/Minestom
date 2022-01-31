@@ -256,7 +256,13 @@ public non-sealed class PlayerInventory extends AbstractInventory implements Equ
     public boolean changeHeld(@NotNull Player player, int slot, int key) {
         final int convertedSlot = convertPlayerInventorySlot(slot, OFFSET);
         final int convertedKey = key == 40 ? OFFHAND_SLOT : key;
-        return handleResult(ClickProcessor.held(this, this, convertedSlot, convertedKey),
+        final var tmp = handlePreClick(this, player, convertedSlot, ClickType.CHANGE_HELD,
+                getCursorItem(), getItemStack(convertedSlot));
+        if (tmp.cancelled()) {
+            update();
+            return false;
+        }
+        return handleResult(ClickProcessor.held(this, this, convertedSlot, tmp.clicked(), convertedKey, getItemStack(convertedKey)),
                 itemStack -> setItemStack(convertedSlot, itemStack), ClickType.CHANGE_HELD);
     }
 

@@ -162,15 +162,15 @@ public final class ClickProcessor {
         }
     }
 
-    public static ClickResult.Single held(PlayerInventory playerInventory, AbstractInventory inventory, int hoverSlot, int heldTarget) {
-        ItemStack hoverItem = inventory.getItemStack(hoverSlot);
-        if (playerInventory == inventory && hoverSlot == heldTarget)
-            return new ClickResultImpl.Single(hoverItem, Map.of()); // No change
+    public static ClickResult.Single held(PlayerInventory playerInventory, AbstractInventory inventory,
+                                          int clickedSlot, ItemStack clicked,
+                                          int heldTarget, ItemStack held) {
+        if (playerInventory == inventory && clickedSlot == heldTarget)
+            return new ClickResultImpl.Single(clicked, Map.of()); // No change
         if (!MathUtils.isBetween(heldTarget, 0, 8) && heldTarget != PlayerInventoryUtils.OFFHAND_SLOT)
-            return new ClickResultImpl.Single(hoverItem, Map.of()); // Held click is only supported for hotbar and offhand
+            return new ClickResultImpl.Single(clicked, Map.of()); // Held click is only supported for hotbar and offhand
         // Swap items
-        final ItemStack playerItem = playerInventory.getItemStack(heldTarget);
-        return new ClickResultImpl.Single(playerItem, Map.of(heldTarget, hoverItem));
+        return new ClickResultImpl.Single(held, Map.of(heldTarget, clicked));
     }
 
     public static ClickResult.Double doubleClick(PlayerInventory playerInventory, Inventory inventory, ItemStack cursor) {
