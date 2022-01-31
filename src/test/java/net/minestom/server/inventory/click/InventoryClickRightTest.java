@@ -16,7 +16,8 @@ public class InventoryClickRightTest extends ClickUtils {
 
     @Test
     public void empty() {
-        assertSingleClick(inventory -> ClickProcessor.right(0, ItemStack.AIR, ItemStack.AIR), ItemStack.AIR, Map.of());
+        assertSingleClick(inventory -> ClickProcessor.right(0, ItemStack.AIR, ItemStack.AIR),
+                ItemStack.AIR, Map.of());
     }
 
     @Test
@@ -25,6 +26,12 @@ public class InventoryClickRightTest extends ClickUtils {
             inventory.setItemStack(0, ItemStack.AIR);
             return ClickProcessor.right(0, ItemStack.AIR, ItemStack.of(Material.DIAMOND, 5));
         }, ItemStack.of(Material.DIAMOND, 4), Map.of(0, ItemStack.of(Material.DIAMOND)));
+    }
+
+    @Test
+    public void insertSingle() {
+        assertSingleClick(inventory -> ClickProcessor.right(0, ItemStack.AIR, ItemStack.of(Material.DIAMOND)),
+                ItemStack.AIR, Map.of(0, ItemStack.of(Material.DIAMOND)));
     }
 
     @Test
@@ -43,6 +50,15 @@ public class InventoryClickRightTest extends ClickUtils {
             inventory.setItemStack(0, item);
             return ClickProcessor.right(0, item, ItemStack.AIR);
         }, ItemStack.of(Material.DIAMOND, 16), Map.of(0, ItemStack.of(Material.DIAMOND, 16)));
+    }
+
+    @Test
+    public void takeSingle() {
+        assertSingleClick(inventory -> {
+            var item = ItemStack.of(Material.DIAMOND);
+            inventory.setItemStack(0, item);
+            return ClickProcessor.right(0, item, ItemStack.AIR);
+        }, ItemStack.of(Material.DIAMOND), Map.of(0, ItemStack.AIR));
     }
 
     @Test

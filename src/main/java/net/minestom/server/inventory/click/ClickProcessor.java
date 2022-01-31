@@ -72,13 +72,14 @@ public final class ClickProcessor {
             } else {
                 if (clicked.isAir()) {
                     // Put 1 to clicked
-                    cursor = cursorRule.apply(cursor, operand -> operand - 1);
-                    clicked = clickedRule.apply(cursor, 1);
+                    var tmp = cursor;
+                    cursor = cursorRule.apply(tmp, operand -> operand - 1);
+                    clicked = clickedRule.apply(tmp, 1);
                 } else {
                     // Swap items
-                    var temp = cursor;
+                    var tmp = cursor;
                     cursor = clicked;
-                    clicked = temp;
+                    clicked = tmp;
                 }
             }
         }
