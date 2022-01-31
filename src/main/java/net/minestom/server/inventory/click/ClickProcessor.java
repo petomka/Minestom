@@ -11,12 +11,14 @@ import net.minestom.server.item.Material;
 import net.minestom.server.item.StackingRule;
 import net.minestom.server.utils.MathUtils;
 import net.minestom.server.utils.inventory.PlayerInventoryUtils;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@ApiStatus.Internal
 public final class ClickProcessor {
 
     public static ClickResult.Single left(int slot, ItemStack clicked, ItemStack cursor) {
