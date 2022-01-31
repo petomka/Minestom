@@ -275,7 +275,13 @@ public non-sealed class Inventory extends AbstractInventory implements Viewable 
         final int clickSlot = isInWindow ? slot : PlayerInventoryUtils.convertSlot(slot, offset);
         final int convertedKey = key == 40 ? OFFHAND_SLOT : key;
         final var clickInv = isInWindow ? this : playerInventory;
-        return handleResult(ClickProcessor.held(playerInventory, clickInv, clickSlot, clickInv.getItemStack(clickSlot), convertedKey, playerInventory.getItemStack(convertedKey)),
+        final var tmp = handlePreClick(clickInv, player, clickSlot, ClickType.CHANGE_HELD,
+                getCursorItem(player), clickInv.getItemStack(clickSlot));
+        if (tmp.cancelled()) {
+            update();
+            return false;
+        }
+        return handleResult(ClickProcessor.held(playerInventory, clickInv, clickSlot, tmp.clicked(), convertedKey, playerInventory.getItemStack(convertedKey)),
                 itemStack -> clickInv.setItemStack(clickSlot, itemStack), player, playerInventory, ClickType.SHIFT_CLICK);
     }
 
