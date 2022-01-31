@@ -229,7 +229,12 @@ public non-sealed class Inventory extends AbstractInventory implements Viewable 
         final boolean isInWindow = isClickInWindow(slot);
         final int clickSlot = isInWindow ? slot : PlayerInventoryUtils.convertSlot(slot, offset);
         var inventory = isInWindow ? this : player.getInventory();
-        return handleResult(ClickProcessor.left(clickSlot, inventory.getItemStack(clickSlot), getCursorItem(player)),
+        final var tmp = handlePreClick(inventory, player, clickSlot, ClickType.LEFT_CLICK, getCursorItem(player), inventory.getItemStack(clickSlot));
+        if (tmp.cancelled()) {
+            update();
+            return false;
+        }
+        return handleResult(ClickProcessor.left(clickSlot, tmp.clicked(), tmp.cursor()),
                 itemStack -> setCursorItem(player, itemStack), player, inventory, ClickType.LEFT_CLICK);
     }
 
@@ -238,7 +243,12 @@ public non-sealed class Inventory extends AbstractInventory implements Viewable 
         final boolean isInWindow = isClickInWindow(slot);
         final int clickSlot = isInWindow ? slot : PlayerInventoryUtils.convertSlot(slot, offset);
         var inventory = isInWindow ? this : player.getInventory();
-        return handleResult(ClickProcessor.right(clickSlot, inventory.getItemStack(clickSlot), getCursorItem(player)),
+        final var tmp = handlePreClick(inventory, player, clickSlot, ClickType.RIGHT_CLICK, getCursorItem(player), inventory.getItemStack(clickSlot));
+        if (tmp.cancelled()) {
+            update();
+            return false;
+        }
+        return handleResult(ClickProcessor.right(clickSlot, tmp.clicked(), tmp.cursor()),
                 itemStack -> setCursorItem(player, itemStack), player, inventory, ClickType.RIGHT_CLICK);
     }
 

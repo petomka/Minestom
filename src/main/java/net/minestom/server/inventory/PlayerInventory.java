@@ -3,14 +3,11 @@ package net.minestom.server.inventory;
 import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.EventDispatcher;
-import net.minestom.server.event.inventory.InventoryPreClickEvent;
 import net.minestom.server.event.item.EntityEquipEvent;
 import net.minestom.server.inventory.click.ClickProcessor;
 import net.minestom.server.inventory.click.ClickResult;
 import net.minestom.server.inventory.click.ClickType;
 import net.minestom.server.inventory.click.DragHelper;
-import net.minestom.server.inventory.condition.InventoryCondition;
-import net.minestom.server.inventory.condition.InventoryConditionResult;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.network.packet.server.play.SetSlotPacket;
 import net.minestom.server.network.packet.server.play.WindowItemsPacket;
@@ -201,24 +198,24 @@ public non-sealed class PlayerInventory extends AbstractInventory implements Equ
     @Override
     public boolean leftClick(@NotNull Player player, int slot) {
         final int convertedSlot = convertPlayerInventorySlot(slot, OFFSET);
-        final var temp = handlePreClick(convertedSlot, ClickType.LEFT_CLICK, getCursorItem(), getItemStack(convertedSlot));
-        if (temp.cancelled()) {
+        final var tmp = handlePreClick(this, player, convertedSlot, ClickType.LEFT_CLICK, getCursorItem(), getItemStack(convertedSlot));
+        if (tmp.cancelled()) {
             update();
             return false;
         }
-        return handleResult(ClickProcessor.left(convertedSlot, temp.clicked(), temp.cursor()),
+        return handleResult(ClickProcessor.left(convertedSlot, tmp.clicked(), tmp.cursor()),
                 this::setCursorItem, ClickType.LEFT_CLICK);
     }
 
     @Override
     public boolean rightClick(@NotNull Player player, int slot) {
         final int convertedSlot = convertPlayerInventorySlot(slot, OFFSET);
-        final var temp = handlePreClick(convertedSlot, ClickType.RIGHT_CLICK, getCursorItem(), getItemStack(convertedSlot));
-        if (temp.cancelled()) {
+        final var tmp = handlePreClick(this, player, convertedSlot, ClickType.RIGHT_CLICK, getCursorItem(), getItemStack(convertedSlot));
+        if (tmp.cancelled()) {
             update();
             return false;
         }
-        return handleResult(ClickProcessor.right(convertedSlot, temp.clicked(), temp.cursor()),
+        return handleResult(ClickProcessor.right(convertedSlot, tmp.clicked(), tmp.cursor()),
                 this::setCursorItem, ClickType.RIGHT_CLICK);
     }
 
@@ -285,47 +282,6 @@ public non-sealed class PlayerInventory extends AbstractInventory implements Equ
     public boolean doubleClick(@NotNull Player player, int slot) {
         return handleResult(ClickProcessor.doubleWithinPlayer(this, getCursorItem()),
                 this::setCursorItem, ClickType.DOUBLE_CLICK);
-    }
-
-    record ClickTemp(ItemStack cursor, ItemStack clicked, boolean cancelled) {
-    }
-
-    private ClickTemp handlePreClick(int slot, ClickType clickType, ItemStack cursor, ItemStack clicked) {
-        boolean cancelled = false;
-        // Reset the didCloseInventory field
-        // Wait for inventory conditions + events to possibly close the inventory
-        player.UNSAFE_changeDidCloseInventory(false);
-        // InventoryPreClickEvent
-        {
-            InventoryPreClickEvent inventoryPreClickEvent = new InventoryPreClickEvent(null, player, slot, clickType,
-                    clicked, cursor);
-            EventDispatcher.call(inventoryPreClickEvent);
-            cursor = inventoryPreClickEvent.getCursorItem();
-            clicked = inventoryPreClickEvent.getClickedItem();
-            if (inventoryPreClickEvent.isCancelled()) {
-                cancelled = true;
-            }
-        }
-        // Inventory conditions
-        {
-            final List<InventoryCondition> inventoryConditions = getInventoryConditions();
-            for (InventoryCondition inventoryCondition : inventoryConditions) {
-                var result = new InventoryConditionResult(clicked, cursor);
-                inventoryCondition.accept(player, slot, clickType, result);
-
-                cursor = result.getCursorItem();
-                clicked = result.getClickedItem();
-                if (result.isCancel()) {
-                    cancelled = true;
-                }
-            }
-            // Cancel the click if the inventory has been closed by Player#closeInventory within an inventory listener
-            if (player.didCloseInventory()) {
-                cancelled = true;
-                player.UNSAFE_changeDidCloseInventory(false);
-            }
-        }
-        return new ClickTemp(cursor, clicked, cancelled);
     }
 
     private boolean handleResult(ClickResult.Single result, Consumer<ItemStack> remainingSetter, ClickType clickType) {
