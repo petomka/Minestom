@@ -323,15 +323,33 @@ public non-sealed class Inventory extends AbstractInventory implements Viewable 
         return dragHelper.test(player, slot, button, clickSlot, clickInv,
                 // Start
                 (clickType) -> {
+                    final var tmp = handlePreClick(clickInv, player, -999, clickType,
+                            getCursorItem(player), ItemStack.AIR);
+                    if (tmp.cancelled()) {
+                        update();
+                        return false;
+                    }
                     return true;
                 },
                 // Step
                 (clickType) -> {
-                    return true;
+                    final var tmp = handlePreClick(clickInv, player, clickSlot, clickType,
+                            getCursorItem(player), getItemStack(clickSlot));
+                    return !tmp.cancelled();
                 },
                 // End
                 (clickType, entries) -> {
                     var slots = entries.stream().map(dragData -> Pair.of(dragData.inventory(), dragData.slot())).toList();
+                    // Handle last drag
+                    {
+                        final int lastSlot = entries.get(entries.size() - 1).slot();
+                        final var tmp = handlePreClick(clickInv, player, lastSlot, clickType,
+                                getCursorItem(player), getItemStack(lastSlot));
+                        if (tmp.cancelled()) {
+                            update();
+                            return false;
+                        }
+                    }
                     if (clickType == ClickType.LEFT_DRAGGING) {
                         return handleResult(ClickProcessor.leftDrag(playerInv, this, getCursorItem(player), slots),
                                 itemStack -> setCursorItem(player, itemStack), player, clickType);
