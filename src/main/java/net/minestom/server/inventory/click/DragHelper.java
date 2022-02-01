@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 public final class DragHelper {
@@ -18,19 +19,24 @@ public final class DragHelper {
     }
 
     public boolean test(Player player, int slot, int button, int clickSlot, AbstractInventory clickInventory,
-                        Predicate<List<Entry>> leftHandler,
-                        Predicate<List<Entry>> rightHandler) {
+                        Predicate<ClickType> start,
+                        Predicate<ClickType> step,
+                        BiPredicate<ClickType, List<Entry>> end) {
         if (slot != -999) {
             // Add slot
             if (button == 1) { // Add left
                 List<Entry> left = leftDraggingMap.get(player);
                 if (left == null) return false;
-                left.add(new Entry(clickSlot, clickInventory));
+                if (step.test(ClickType.LEFT_DRAGGING)) {
+                    left.add(new Entry(clickSlot, clickInventory));
+                }
                 return true;
             } else if (button == 5) { // Add right
                 List<Entry> right = rightDraggingMap.get(player);
                 if (right == null) return false;
-                right.add(new Entry(clickSlot, clickInventory));
+                if (step.test(ClickType.RIGHT_DRAGGING)) {
+                    right.add(new Entry(clickSlot, clickInventory));
+                }
                 return true;
             } else if (button == 9) { // Add middle TODO
                 return false;
@@ -39,19 +45,23 @@ public final class DragHelper {
         } else {
             // Drag instruction
             if (button == 0) { // Start left
-                this.leftDraggingMap.put(player, new ArrayList<>());
+                if (start.test(ClickType.START_LEFT_DRAGGING)) {
+                    this.leftDraggingMap.put(player, new ArrayList<>());
+                }
                 return true;
             } else if (button == 2) { // End left
                 List<Entry> left = leftDraggingMap.remove(player);
                 if (left == null) return false;
-                return leftHandler.test(left);
+                return end.test(ClickType.END_LEFT_DRAGGING, left);
             } else if (button == 4) { // Start right
-                this.rightDraggingMap.put(player, new ArrayList<>());
+                if (start.test(ClickType.START_RIGHT_DRAGGING)) {
+                    this.rightDraggingMap.put(player, new ArrayList<>());
+                }
                 return true;
             } else if (button == 6) { // End right
                 List<Entry> right = rightDraggingMap.remove(player);
                 if (right == null) return false;
-                return rightHandler.test(right);
+                return end.test(ClickType.END_RIGHT_DRAGGING, right);
             }
             return false; // Shouldn't happen
         }

@@ -271,46 +271,44 @@ public non-sealed class PlayerInventory extends AbstractInventory implements Equ
     @Override
     public boolean dragging(@NotNull Player player, int slot, int button) {
         final int convertedSlot = convertPlayerInventorySlot(slot, OFFSET);
-        if (slot == -999) {
-            ClickType start = switch (button) {
-                case 0 -> ClickType.START_LEFT_DRAGGING;
-                case 4 -> ClickType.START_RIGHT_DRAGGING;
-                default -> null;
-            };
-            if (start != null) {
-                final var tmp = handlePreClick(this, player, slot, start,
-                        getCursorItem(), ItemStack.AIR);
-                if (tmp.cancelled()) {
-                    update();
-                    return false;
-                }
-            }
-        }
         return dragHelper.test(player, slot, button, convertedSlot, this,
-                (entries) -> {
+                // Start
+                (clickType) -> {
+                    final var tmp = handlePreClick(this, player, -999, clickType,
+                            getCursorItem(), ItemStack.AIR);
+                    if (tmp.cancelled()) {
+                        update();
+                        return false;
+                    }
+                    return true;
+                },
+                // Step
+                (clickType) -> {
+                    final var tmp = handlePreClick(this, player, convertedSlot, clickType,
+                            getCursorItem(), getItemStack(convertedSlot));
+                    return !tmp.cancelled();
+                },
+                // End
+                (clickType, entries) -> {
                     // Handle each individual drag
-                    var slots = entries.stream().map(DragHelper.Entry::slot).filter(dragSlot -> {
-                        final var tmp = handlePreClick(this, player, dragSlot, ClickType.LEFT_DRAGGING,
-                                getCursorItem(), getItemStack(dragSlot));
-                        return !tmp.cancelled();
-                    }).toList();
+                    var slots = entries.stream().map(DragHelper.Entry::slot).toList();
                     // Handle last drag
                     {
                         final int lastSlot = entries.get(entries.size() - 1).slot();
-                        final var tmp = handlePreClick(this, player, lastSlot, ClickType.END_LEFT_DRAGGING,
+                        final var tmp = handlePreClick(this, player, lastSlot, clickType,
                                 getCursorItem(), getItemStack(lastSlot));
                         if (tmp.cancelled()) {
                             update();
                             return false;
                         }
                     }
-                    return handleResult(ClickProcessor.leftDragWithinPlayer(this, getCursorItem(), slots),
-                            this::setCursorItem, ClickType.LEFT_DRAGGING);
-                },
-                (entries) -> {
-                    var slots = entries.stream().map(DragHelper.Entry::slot).toList();
-                    return handleResult(ClickProcessor.rightDragWithinPlayer(this, getCursorItem(), slots),
-                            this::setCursorItem, ClickType.RIGHT_DRAGGING);
+                    if (clickType == ClickType.END_LEFT_DRAGGING) {
+                        return handleResult(ClickProcessor.leftDragWithinPlayer(this, getCursorItem(), slots),
+                                this::setCursorItem, clickType);
+                    } else {
+                        return handleResult(ClickProcessor.rightDragWithinPlayer(this, getCursorItem(), slots),
+                                this::setCursorItem, clickType);
+                    }
                 });
     }
 
