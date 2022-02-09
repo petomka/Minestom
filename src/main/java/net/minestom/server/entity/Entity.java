@@ -1,13 +1,9 @@
 package net.minestom.server.entity;
 
-import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEvent.ShowEntity;
-import net.kyori.adventure.text.event.HoverEventSource;
 import net.minestom.server.MinecraftServer;
-import net.minestom.server.Tickable;
-import net.minestom.server.Viewable;
 import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.collision.CollisionUtils;
 import net.minestom.server.coordinate.Point;
@@ -30,14 +26,11 @@ import net.minestom.server.network.packet.server.LazyPacket;
 import net.minestom.server.network.packet.server.ServerPacket;
 import net.minestom.server.network.packet.server.play.*;
 import net.minestom.server.permission.Permission;
-import net.minestom.server.permission.PermissionHandler;
 import net.minestom.server.potion.Potion;
 import net.minestom.server.potion.PotionEffect;
 import net.minestom.server.potion.TimedPotion;
 import net.minestom.server.tag.Tag;
-import net.minestom.server.tag.TagHandler;
 import net.minestom.server.thread.Acquirable;
-import net.minestom.server.timer.Schedulable;
 import net.minestom.server.timer.Scheduler;
 import net.minestom.server.timer.TaskSchedule;
 import net.minestom.server.utils.PacketUtils;
@@ -74,7 +67,7 @@ import java.util.function.UnaryOperator;
  * <p>
  * To create your own entity you probably want to extends {@link LivingEntity} or {@link EntityCreature} instead.
  */
-public class Entity implements Viewable, Tickable, Schedulable, TagHandler, PermissionHandler, HoverEventSource<ShowEntity>, Sound.Emitter {
+public class Entity implements IEntity {
 
     private static final Int2ObjectSyncMap<Entity> ENTITY_BY_ID = Int2ObjectSyncMap.hashmap();
     private static final Map<UUID, Entity> ENTITY_BY_UUID = new ConcurrentHashMap<>();
@@ -705,6 +698,11 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
         return id;
     }
 
+    @Override
+    public @NotNull EntityType type() {
+        return entityType;
+    }
+
     /**
      * Returns the entity type.
      *
@@ -790,6 +788,11 @@ public class Entity implements Viewable, Tickable, Schedulable, TagHandler, Perm
     protected void refreshCurrentChunk(Chunk currentChunk) {
         this.currentChunk = currentChunk;
         MinecraftServer.process().dispatcher().updateElement(this, currentChunk);
+    }
+
+    @Override
+    public @NotNull Instance instance() {
+        return instance;
     }
 
     /**
