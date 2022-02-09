@@ -432,7 +432,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         refreshIsDead(false);
 
         // Runnable called when teleportation is successful (after loading and sending necessary chunk)
-        teleport(respawnEvent.getRespawnPosition()).thenRun(this::refreshAfterTeleport);
+        teleportAsync(respawnEvent.getRespawnPosition()).thenRun(this::refreshAfterTeleport);
     }
 
     /**

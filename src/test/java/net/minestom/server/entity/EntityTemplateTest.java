@@ -9,6 +9,6 @@ public class EntityTemplateTest {
     @Test
     public void basic() {
         var template = EntityTemplate.ofType(EntityType.PIG);
-        assertEquals(EntityType.PLAYER, template.type());
+        assertEquals(EntityType.PIG, template.type());
     }
 }

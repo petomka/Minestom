@@ -268,39 +268,20 @@ public class Entity implements IEntity {
         return onGround || EntityUtils.isOnGround(this) /* backup for levitating entities */;
     }
 
-    /**
-     * Gets metadata of this entity.
-     * You may want to cast it to specific implementation.
-     *
-     * @return metadata of this entity.
-     */
-    public @NotNull EntityMeta getEntityMeta() {
-        return this.entityMeta;
+    @Override
+    public @NotNull EntityMeta meta() {
+        return entityMeta;
     }
 
-    /**
-     * Teleports the entity only if the chunk at {@code position} is loaded or if
-     * {@link Instance#hasEnabledAutoChunkLoad()} returns true.
-     *
-     * @param position the teleport position
-     * @param chunks   the chunk indexes to load before teleporting the entity,
-     *                 indexes are from {@link ChunkUtils#getChunkIndex(int, int)},
-     *                 can be null or empty to only load the chunk at {@code position}
-     * @throws IllegalStateException if you try to teleport an entity before settings its instance
-     */
-    public @NotNull CompletableFuture<Void> teleport(@NotNull Pos position, long @Nullable [] chunks) {
-        Check.stateCondition(instance == null, "You need to use Entity#setInstance before teleporting an entity!");
+    @Override
+    public @NotNull CompletableFuture<Void> teleportAsync(@NotNull Point point) {
+        final Pos position = Pos.fromPoint(point);
         final Runnable endCallback = () -> {
             this.previousPosition = this.position;
             this.position = position;
             refreshCoordinate(position);
             synchronizePosition(true);
         };
-
-        if (chunks != null && chunks.length > 0) {
-            // Chunks need to be loaded before the teleportation can happen
-            return ChunkUtils.optionalLoadAll(instance, chunks, null).thenRun(endCallback);
-        }
         final Pos currentPosition = this.position;
         if (!currentPosition.sameChunk(position)) {
             // Ensure that the chunk is loaded
@@ -310,10 +291,6 @@ public class Entity implements IEntity {
             endCallback.run();
             return AsyncUtils.empty();
         }
-    }
-
-    public @NotNull CompletableFuture<Void> teleport(@NotNull Pos position) {
-        return teleport(position, null);
     }
 
     /**
@@ -688,27 +665,13 @@ public class Entity implements IEntity {
         }
     }
 
-    /**
-     * Each entity has an unique id (server-wide) which will change after a restart.
-     *
-     * @return the unique entity id
-     * @see Entity#getEntity(int) to retrive an entity based on its id
-     */
-    public int getEntityId() {
+    @Override
+    public int id() {
         return id;
     }
 
     @Override
     public @NotNull EntityType type() {
-        return entityType;
-    }
-
-    /**
-     * Returns the entity type.
-     *
-     * @return the entity type
-     */
-    public @NotNull EntityType getEntityType() {
         return entityType;
     }
 
@@ -775,15 +738,6 @@ public class Entity implements IEntity {
         this.boundingBox = boundingBox;
     }
 
-    /**
-     * Convenient method to get the entity current chunk.
-     *
-     * @return the entity chunk, can be null even if unlikely
-     */
-    public @Nullable Chunk getChunk() {
-        return currentChunk;
-    }
-
     @ApiStatus.Internal
     protected void refreshCurrentChunk(Chunk currentChunk) {
         this.currentChunk = currentChunk;
@@ -791,16 +745,12 @@ public class Entity implements IEntity {
     }
 
     @Override
-    public @NotNull Instance instance() {
-        return instance;
+    public @NotNull Chunk currentChunk() {
+        return currentChunk;
     }
 
-    /**
-     * Gets the entity current instance.
-     *
-     * @return the entity instance, can be null if the entity doesn't have an instance yet
-     */
-    public @Nullable Instance getInstance() {
+    @Override
+    public @NotNull Instance instance() {
         return instance;
     }
 
@@ -818,7 +768,7 @@ public class Entity implements IEntity {
                 "Instances need to be registered, please use InstanceManager#registerInstance or InstanceManager#registerSharedInstance");
         final Instance previousInstance = this.instance;
         if (Objects.equals(previousInstance, instance)) {
-            return teleport(spawnPosition); // Already in the instance, teleport to spawn point
+            return teleportAsync(spawnPosition); // Already in the instance, teleport to spawn point
         }
         AddEntityToInstanceEvent event = new AddEntityToInstanceEvent(instance, this);
         EventDispatcher.call(event);
@@ -1318,7 +1268,7 @@ public class Entity implements IEntity {
      * - update the viewable chunks (load and unload)
      * - add/remove players from the viewers list if {@link #isAutoViewable()} is enabled
      * <p>
-     * WARNING: unsafe, should only be used internally in Minestom. Use {@link #teleport(Pos)} instead.
+     * WARNING: unsafe, should only be used internally in Minestom. Use {@link #teleportAsync(Pos)} instead.
      *
      * @param newPosition the new position
      */
@@ -1351,12 +1301,8 @@ public class Entity implements IEntity {
         }
     }
 
-    /**
-     * Gets the entity position.
-     *
-     * @return the current position of the entity
-     */
-    public @NotNull Pos getPosition() {
+    @Override
+    public @NotNull Pos position() {
         return position;
     }
 
@@ -1424,6 +1370,7 @@ public class Entity implements IEntity {
      * <p>
      * WARNING: this does not trigger {@link EntityDeathEvent}.
      */
+    @Override
     public void remove() {
         if (isRemoved()) return;
         // Remove passengers if any (also done with LivingEntity#kill)
@@ -1439,11 +1386,7 @@ public class Entity implements IEntity {
         if (currentInstance != null) removeFromInstance(currentInstance);
     }
 
-    /**
-     * Gets if this entity has been removed.
-     *
-     * @return true if this entity is removed
-     */
+    @Override
     public boolean isRemoved() {
         return removed;
     }

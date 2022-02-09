@@ -82,7 +82,7 @@ public class PlayerInit {
                 itemEntity.setVelocity(velocity);
 
                 {
-                    var entity = EntityTemplate.ofType(EntityType.COW).spawn(player.getInstance(), playerPos);
+                    var entity = EntityTemplate.ofType(EntityType.COW).spawn(player.instance(), playerPos);
                 }
             })
             .addListener(PlayerDisconnectEvent.class, event -> System.out.println("DISCONNECTION " + event.getPlayer().getUsername()))
