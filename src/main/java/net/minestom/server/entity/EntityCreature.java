@@ -1,7 +1,7 @@
 package net.minestom.server.entity;
 
 import com.extollit.gaming.ai.path.HydrazinePathFinder;
-import net.minestom.server.coordinate.Pos;
+import net.minestom.server.coordinate.Point;
 import net.minestom.server.entity.ai.EntityAI;
 import net.minestom.server.entity.ai.EntityAIGroup;
 import net.minestom.server.entity.pathfinding.NavigableEntity;
@@ -55,10 +55,9 @@ public class EntityCreature extends LivingEntity implements NavigableEntity, Ent
     }
 
     @Override
-    public CompletableFuture<Void> setInstance(@NotNull Instance instance, @NotNull Pos spawnPosition) {
+    public @NotNull CompletableFuture<Void> setInstanceAsync(@NotNull Instance instance, @NotNull Point point) {
         this.navigator.setPathFinder(new HydrazinePathFinder(navigator.getPathingEntity(), instance.getInstanceSpace()));
-
-        return super.setInstance(instance, spawnPosition);
+        return super.setInstanceAsync(instance, point);
     }
 
     @Override

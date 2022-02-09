@@ -18,7 +18,6 @@ import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.instance.Chunk;
 import net.minestom.server.instance.EntityTracker;
 import net.minestom.server.instance.Instance;
-import net.minestom.server.instance.InstanceManager;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockHandler;
 import net.minestom.server.network.packet.server.CachedPacket;
@@ -671,17 +670,13 @@ public class Entity implements IEntity {
     }
 
     @Override
-    public @NotNull EntityType type() {
-        return entityType;
+    public @NotNull UUID uuid() {
+        return uuid;
     }
 
-    /**
-     * Gets the entity {@link UUID}.
-     *
-     * @return the entity unique id
-     */
-    public @NotNull UUID getUuid() {
-        return uuid;
+    @Override
+    public @NotNull EntityType type() {
+        return entityType;
     }
 
     /**
@@ -754,18 +749,11 @@ public class Entity implements IEntity {
         return instance;
     }
 
-    /**
-     * Changes the entity instance, i.e. spawns it.
-     *
-     * @param instance      the new instance of the entity
-     * @param spawnPosition the spawn position for the entity.
-     * @return a {@link CompletableFuture} called once the entity's instance has been set,
-     * this is due to chunks needing to load
-     * @throws IllegalStateException if {@code instance} has not been registered in {@link InstanceManager}
-     */
-    public CompletableFuture<Void> setInstance(@NotNull Instance instance, @NotNull Pos spawnPosition) {
+    @Override
+    public @NotNull CompletableFuture<Void> setInstanceAsync(@NotNull Instance instance, @NotNull Point point) {
         Check.stateCondition(!instance.isRegistered(),
                 "Instances need to be registered, please use InstanceManager#registerInstance or InstanceManager#registerSharedInstance");
+        final Pos spawnPosition = Pos.fromPoint(point);
         final Instance previousInstance = this.instance;
         if (Objects.equals(previousInstance, instance)) {
             return teleportAsync(spawnPosition); // Already in the instance, teleport to spawn point
@@ -795,23 +783,6 @@ public class Entity implements IEntity {
                 MinecraftServer.getExceptionManager().handleException(e);
             }
         });
-    }
-
-    public CompletableFuture<Void> setInstance(@NotNull Instance instance, @NotNull Point spawnPosition) {
-        return setInstance(instance, Pos.fromPoint(spawnPosition));
-    }
-
-    /**
-     * Changes the entity instance.
-     *
-     * @param instance the new instance of the entity
-     * @return a {@link CompletableFuture} called once the entity's instance has been set,
-     * this is due to chunks needing to load
-     * @throws NullPointerException  if {@code instance} is null
-     * @throws IllegalStateException if {@code instance} has not been registered in {@link InstanceManager}
-     */
-    public CompletableFuture<Void> setInstance(@NotNull Instance instance) {
-        return setInstance(instance, this.position);
     }
 
     private void removeFromInstance(Instance instance) {
@@ -939,7 +910,7 @@ public class Entity implements IEntity {
         final Entity vehicle = entity.getVehicle();
         if (vehicle != null) vehicle.removePassenger(entity);
         if (!currentInstance.equals(entity.getInstance()))
-            entity.setInstance(currentInstance, position).join();
+            entity.setInstance(currentInstance, position);
         this.passengers.add(entity);
         entity.vehicle = this;
         sendPacketToViewersAndSelf(getPassengersPacket());
@@ -1268,7 +1239,7 @@ public class Entity implements IEntity {
      * - update the viewable chunks (load and unload)
      * - add/remove players from the viewers list if {@link #isAutoViewable()} is enabled
      * <p>
-     * WARNING: unsafe, should only be used internally in Minestom. Use {@link #teleportAsync(Pos)} instead.
+     * WARNING: unsafe, should only be used internally in Minestom. Use {@link #teleportAsync(Point)} instead.
      *
      * @param newPosition the new position
      */

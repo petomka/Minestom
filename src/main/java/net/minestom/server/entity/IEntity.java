@@ -16,6 +16,7 @@ import net.minestom.server.timer.Schedulable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @ApiStatus.Experimental
@@ -30,6 +31,8 @@ public interface IEntity extends Viewable, Tickable, Schedulable,
      * @see Entity#getEntity(int) to retrive an entity based on its id
      */
     int id();
+
+    @NotNull UUID uuid();
 
     @NotNull EntityType type();
 
@@ -47,6 +50,20 @@ public interface IEntity extends Viewable, Tickable, Schedulable,
         teleportAsync(point).join();
     }
 
+    @NotNull CompletableFuture<Void> setInstanceAsync(@NotNull Instance instance, @NotNull Point point);
+
+    default void setInstance(@NotNull Instance instance, @NotNull Point point) {
+        setInstanceAsync(instance, point).join();
+    }
+
+    default @NotNull CompletableFuture<Void> setInstanceAsync(@NotNull Instance instance) {
+        return setInstanceAsync(instance, position());
+    }
+
+    default void setInstance(@NotNull Instance instance) {
+        setInstanceAsync(instance).join();
+    }
+
     void remove();
 
     boolean isRemoved();
@@ -56,6 +73,11 @@ public interface IEntity extends Viewable, Tickable, Schedulable,
     @Deprecated
     default int getEntityId() {
         return id();
+    }
+
+    @Deprecated
+    default UUID getUuid() {
+        return uuid();
     }
 
     @Deprecated

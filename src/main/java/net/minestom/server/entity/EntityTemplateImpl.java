@@ -11,7 +11,7 @@ record EntityTemplateImpl(EntityType type) implements EntityTemplate {
     @Override
     public @NotNull CompletableFuture<IEntity> spawnAsync(@NotNull Instance instance, @NotNull Point position) {
         var entity = new Entity(type);
-        return entity.setInstance(instance, position).thenApply(unused -> entity);
+        return entity.setInstanceAsync(instance, position).thenApply(unused -> entity);
     }
 
     static final class Builder implements EntityTemplate.Builder {

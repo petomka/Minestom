@@ -513,12 +513,13 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
      * Be aware that because chunk operations are expensive,
      * it is possible for this method to be non-blocking when retrieving chunks is required.
      *
-     * @param instance      the new player instance
-     * @param spawnPosition the new position of the player
+     * @param instance the new player instance
+     * @param point    the new position of the player
      * @return a future called once the player instance changed
      */
     @Override
-    public CompletableFuture<Void> setInstance(@NotNull Instance instance, @NotNull Pos spawnPosition) {
+    public @NotNull CompletableFuture<Void> setInstanceAsync(@NotNull Instance instance, @NotNull Point point) {
+        final Pos spawnPosition = Pos.fromPoint(point);
         final Instance currentInstance = this.instance;
         Check.argCondition(currentInstance == instance, "Instance should be different than the current one");
         if (InstanceUtils.areLinked(currentInstance, instance) && spawnPosition.sameChunk(this.position)) {
@@ -568,18 +569,9 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         return future;
     }
 
-    /**
-     * Changes the player instance without changing its position (defaulted to {@link #getRespawnPoint()}
-     * if the player is not in any instance).
-     *
-     * @param instance the new player instance
-     * @return a {@link CompletableFuture} called once the entity's instance has been set,
-     * this is due to chunks needing to load for players
-     * @see #setInstance(Instance, Pos)
-     */
     @Override
-    public CompletableFuture<Void> setInstance(@NotNull Instance instance) {
-        return setInstance(instance, this.instance != null ? getPosition() : getRespawnPoint());
+    public void setInstance(@NotNull Instance instance) {
+        setInstanceAsync(instance, this.instance != null ? position() : getRespawnPoint()).join();
     }
 
     /**
@@ -587,7 +579,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
      * <p>
      * Does add the player to {@code instance}, remove all viewable entities and call {@link PlayerSpawnEvent}.
      * <p>
-     * UNSAFE: only called with {@link #setInstance(Instance, Pos)}.
+     * UNSAFE: only called with {@link #setInstanceAsync(Instance, Point)}.
      *
      * @param spawnPosition the position to teleport the player
      * @param firstSpawn    true if this is the player first spawn
@@ -604,7 +596,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
 
         if (dimensionChange) sendDimension(instance.getDimensionType());
 
-        super.setInstance(instance, spawnPosition);
+        super.setInstanceAsync(instance, spawnPosition).join();
 
         if (updateChunks) {
             sendPacket(new UpdateViewPositionPacket(spawnPosition.chunkX(), spawnPosition.chunkZ()));
@@ -956,6 +948,11 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
     @Override
     public @NotNull Component getName() {
         return Objects.requireNonNullElse(displayName, usernameComponent);
+    }
+
+    @Override
+    public UUID getUuid() {
+        return uuid();
     }
 
     /**
