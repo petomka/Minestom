@@ -14,10 +14,11 @@ record ChunkGeneratorCompatibilityLayer(@NotNull ChunkGenerator chunkGenerator) 
     @Override
     public void generate(@NotNull GenerationRequest request) {
         GenerationUnit chunk = request.unit();
+        final int startY = chunk.absoluteStart().blockY();
         ChunkBatch batch = new ChunkBatch() {
             @Override
             public void setBlock(int x, int y, int z, @NotNull Block block) {
-                chunk.modifier().setRelative(x, y, z, block);
+                chunk.modifier().setRelative(x, y - startY, z, block);
             }
         };
         chunkGenerator.generateChunkData(batch, -999, -999);
