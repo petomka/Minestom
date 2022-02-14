@@ -17,7 +17,7 @@ record ChunkGeneratorCompatibilityLayer(@NotNull ChunkGenerator chunkGenerator) 
         ChunkBatch batch = new ChunkBatch() {
             @Override
             public void setBlock(int x, int y, int z, @NotNull Block block) {
-                chunk.modifier().setBlock(x, y, z, block);
+                chunk.modifier().setRelative(x, y, z, block);
             }
         };
         chunkGenerator.generateChunkData(batch, -999, -999);
