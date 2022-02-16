@@ -1451,6 +1451,26 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         this.didCloseInventory = didCloseInventory;
     }
 
+    private Pos compassTarget;
+
+    /**
+     * Sets the position this player's compass should point to.
+     * @param pos the new compass target
+     */
+    public void setCompassTarget(@NotNull Pos pos) {
+        this.compassTarget = pos;
+        SpawnPositionPacket spawnPositionPacket = new SpawnPositionPacket(pos, 0.f);
+        sendPacket(spawnPositionPacket);
+    }
+
+    /**
+     * Returns the previously set compass target. Can be null if it hasn't been set.
+     * @return the set compass target
+     */
+    public @Nullable Pos getCompassTarget() {
+        return compassTarget;
+    }
+
     public int getNextTeleportId() {
         return teleportId.incrementAndGet();
     }
